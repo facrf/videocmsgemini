@@ -74,7 +74,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up QEMU (for all multi-arch platforms: amd64, arm64, arm/v7, arm/v6, 386, riscv64, ppc64le, s390x)
+      - name: "Set up QEMU (for all multi-arch platforms: amd64, arm64, arm/v7, arm/v6, 386, riscv64, ppc64le, s390x)"
         uses: docker/setup-qemu-action@v3
         with:
           platforms: all
