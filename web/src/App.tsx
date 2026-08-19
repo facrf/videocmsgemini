@@ -191,19 +191,19 @@ export function App() {
       )}
 
       {/* Toast Container */}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col space-y-2 pointer-events-none">
+      <div className="fixed bottom-5 right-5 z-50 flex flex-col space-y-2.5 pointer-events-none">
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`p-3 rounded-lg shadow-xl text-xs font-medium border pointer-events-auto transition duration-300 max-w-sm flex items-center space-x-2 ${
+            className={`p-3.5 rounded-2xl shadow-2xl text-xs font-semibold border pointer-events-auto backdrop-blur-md transition-all duration-300 max-w-sm flex items-center space-x-3 ${
               t.type === 'success'
-                ? 'bg-emerald-950/90 text-emerald-200 border-emerald-800'
+                ? 'bg-emerald-950/95 text-emerald-200 border-emerald-800/80 shadow-emerald-950/50'
                 : t.type === 'error'
-                ? 'bg-rose-950/90 text-rose-200 border-rose-800'
-                : 'bg-slate-900/90 text-slate-200 border-slate-700'
+                ? 'bg-rose-950/95 text-rose-200 border-rose-800/80 shadow-rose-950/50'
+                : 'bg-slate-900/95 text-slate-200 border-slate-700/80 shadow-slate-950/50'
             }`}
           >
-            <span>{t.message}</span>
+            <span className="leading-snug">{t.message}</span>
           </div>
         ))}
       </div>

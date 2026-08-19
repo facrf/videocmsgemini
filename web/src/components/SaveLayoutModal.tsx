@@ -57,20 +57,23 @@ export const SaveLayoutModal: React.FC<SaveLayoutModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none">
+      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+        <div className="px-6 py-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-950/70">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+            <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shadow-inner">
               <LayoutGrid className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white">Salvar Layout de Mosaico</h3>
-              <p className="text-xs text-slate-400">Grade atual: {gridSize} posições ({Object.keys(assignedCameras).length} câmeras)</p>
+              <h3 className="text-sm font-extrabold text-white">Salvar Layout de Mosaico</h3>
+              <p className="text-xs text-slate-400">Grade: {gridSize} posições ({Object.keys(assignedCameras).length} câmeras)</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -78,50 +81,50 @@ export const SaveLayoutModal: React.FC<SaveLayoutModalProps> = ({
         {/* Content */}
         <form onSubmit={handleSave} className="p-6 space-y-4">
           {error && (
-            <div className="p-3 bg-rose-950/40 border border-rose-800 rounded-lg text-rose-300 text-xs">
+            <div className="p-3.5 bg-rose-950/60 border border-rose-800 rounded-xl text-rose-300 text-xs shadow-inner">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Nome do Layout *</label>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Nome do Layout *</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex: Mosaico Portaria & Perímetro"
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500"
+              className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 shadow-inner"
               required
               autoFocus
             />
           </div>
 
-          <div className="flex items-center space-x-2 pt-2">
+          <div className="flex items-center space-x-3 p-3 bg-slate-950/60 border border-slate-800 rounded-xl shadow-inner cursor-pointer" onClick={() => setIsDefault(!isDefault)}>
             <input
               type="checkbox"
               id="isDefault"
               checked={isDefault}
               onChange={(e) => setIsDefault(e.target.checked)}
-              className="w-4 h-4 rounded bg-slate-950 border-slate-800 text-blue-600 focus:ring-blue-500"
+              className="w-4 h-4 rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
             />
-            <label htmlFor="isDefault" className="text-xs text-slate-300">
+            <label htmlFor="isDefault" className="text-xs text-slate-300 cursor-pointer font-medium">
               Definir como layout padrão ao abrir o Live View
             </label>
           </div>
         </form>
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t border-slate-800 bg-slate-950/50 flex items-center justify-end space-x-2">
+        <div className="px-6 py-3.5 border-t border-slate-800/80 bg-slate-950/70 flex items-center justify-end space-x-2.5">
           <button
             onClick={onClose}
-            className="px-4 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded transition"
+            className="px-4 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition"
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white rounded transition flex items-center gap-1.5 disabled:opacity-50"
+            className="px-5 py-2 text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-blue-600/25 disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
             {saving ? 'Salvando...' : 'Salvar Layout'}
@@ -131,3 +134,4 @@ export const SaveLayoutModal: React.FC<SaveLayoutModalProps> = ({
     </div>
   );
 };
+

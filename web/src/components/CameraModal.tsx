@@ -7,6 +7,11 @@ import {
   RefreshCw,
   Eye,
   EyeOff,
+  Network,
+  Lock,
+  Sliders,
+  Tag,
+  Layers,
 } from 'lucide-react';
 import { Camera, CameraCapabilities } from '../types';
 import { api } from '../api/client';
@@ -141,59 +146,68 @@ export const CameraModal: React.FC<CameraModalProps> = ({ camera, onClose, onSav
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-2xl w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none">
+      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+        <div className="px-6 py-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-950/70">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+            <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shadow-inner">
               <CameraIcon className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white">
-                {isEditing ? 'Editar Câmera IP' : 'Cadastrar Câmera Manualmente'}
+              <h3 className="text-sm font-extrabold text-white">
+                {isEditing ? 'Editar Configurações da Câmera IP' : 'Cadastrar Nova Câmera IP'}
               </h3>
-              <p className="text-xs text-slate-400">Configuração de parâmetros de rede, ONVIF e RTSP</p>
+              <p className="text-xs text-slate-400">Configuração de rede, autenticação, ONVIF e RTSP</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Form */}
+        {/* Form Content */}
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 space-y-4">
           {error && (
-            <div className="p-3 bg-rose-950/40 border border-rose-800 rounded-lg text-rose-300 text-xs">
-              {error}
+            <div className="p-3.5 bg-rose-950/60 border border-rose-800 rounded-xl text-rose-300 text-xs shadow-inner flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
-          {/* Basic Info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Nome da Câmera *</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Ex: Câmera Portaria Principal"
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500"
-                required
-              />
+          {/* Basic Info Group */}
+          <div className="space-y-3">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <Network className="w-3.5 h-3.5 text-blue-400" /> Identificação & Endereçamento
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Host ou Endereço IP *</label>
-              <input
-                type="text"
-                name="host"
-                value={formData.host}
-                onChange={handleChange}
-                placeholder="Ex: 192.168.1.100"
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-white focus:outline-none focus:border-blue-500"
-                required
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Nome da Câmera *</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Ex: Câmera Portaria Principal"
+                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 shadow-inner"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Host / Endereço IP *</label>
+                <input
+                  type="text"
+                  name="host"
+                  value={formData.host}
+                  onChange={handleChange}
+                  placeholder="Ex: 192.168.1.100"
+                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 shadow-inner"
+                  required
+                />
+              </div>
             </div>
           </div>
 
@@ -206,7 +220,7 @@ export const CameraModal: React.FC<CameraModalProps> = ({ camera, onClose, onSav
                 name="port"
                 value={formData.port}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-white focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-white focus:outline-none focus:border-blue-500 shadow-inner"
               />
             </div>
             <div>
@@ -216,7 +230,7 @@ export const CameraModal: React.FC<CameraModalProps> = ({ camera, onClose, onSav
                 name="rtsp_port"
                 value={formData.rtsp_port}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-white focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-white focus:outline-none focus:border-blue-500 shadow-inner"
               />
             </div>
             <div>
@@ -225,7 +239,7 @@ export const CameraModal: React.FC<CameraModalProps> = ({ camera, onClose, onSav
                 name="preferred_transport"
                 value={formData.preferred_transport}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 shadow-inner"
               >
                 <option value="tcp">TCP (Recomendado)</option>
                 <option value="udp">UDP</option>
@@ -238,53 +252,58 @@ export const CameraModal: React.FC<CameraModalProps> = ({ camera, onClose, onSav
                 name="manufacturer"
                 value={formData.manufacturer}
                 onChange={handleChange}
-                placeholder="Ex: Dahua, Intelbras"
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500"
+                placeholder="Ex: Intelbras, Hikvision"
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 shadow-inner"
               />
             </div>
           </div>
 
           {/* Credentials */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Usuário</label>
-              <input
-                type="text"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500"
-              />
+          <div className="space-y-3 pt-2 border-t border-slate-800/80">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5 text-blue-400" /> Autenticação Segura
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                {isEditing ? 'Nova Senha (deixe em branco para manter)' : 'Senha da Câmera'}
-              </label>
-              <div className="relative">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Usuário</label>
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  name="password"
-                  value={formData.password}
+                  type="text"
+                  name="username"
+                  value={formData.username}
                   onChange={handleChange}
-                  placeholder={isEditing ? '••••••••' : 'Senha do dispositivo'}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white pr-10 focus:outline-none focus:border-blue-500"
+                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 shadow-inner"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-2 top-2 text-slate-500 hover:text-slate-300"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  {isEditing ? 'Nova Senha (deixe em branco para manter)' : 'Senha da Câmera'}
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder={isEditing ? '••••••••' : 'Senha do dispositivo'}
+                    className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white pr-10 focus:outline-none focus:border-blue-500 shadow-inner"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2.5 top-2.5 text-slate-500 hover:text-slate-300"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Advanced / Optional Paths */}
           <div className="space-y-3 pt-2 border-t border-slate-800/80">
-            <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              URLs & Caminhos Específicos (Opcional)
-            </h4>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <Sliders className="w-3.5 h-3.5 text-blue-400" /> Caminhos & URLs Específicas (Opcional)
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] text-slate-400 mb-1">ONVIF URL</label>
@@ -294,7 +313,7 @@ export const CameraModal: React.FC<CameraModalProps> = ({ camera, onClose, onSav
                   value={formData.onvif_url}
                   onChange={handleChange}
                   placeholder="http://host:port/onvif/device_service"
-                  className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs font-mono text-white focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-white focus:outline-none focus:border-blue-500 shadow-inner"
                 />
               </div>
               <div>
@@ -305,7 +324,7 @@ export const CameraModal: React.FC<CameraModalProps> = ({ camera, onClose, onSav
                   value={formData.rtsp_path}
                   onChange={handleChange}
                   placeholder="/cam/realmonitor?channel=1&subtype=0"
-                  className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs font-mono text-white focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-white focus:outline-none focus:border-blue-500 shadow-inner"
                 />
               </div>
             </div>
@@ -317,52 +336,72 @@ export const CameraModal: React.FC<CameraModalProps> = ({ camera, onClose, onSav
                 value={formData.substream_path}
                 onChange={handleChange}
                 placeholder="/cam/realmonitor?channel=1&subtype=1"
-                className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs font-mono text-white focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-white focus:outline-none focus:border-blue-500 shadow-inner"
               />
             </div>
           </div>
 
-          {/* Organization */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800/80">
+          {/* Tags & Groups */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2 border-t border-slate-800/80">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Tags (separadas por vírgula)</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1">
+                <Tag className="w-3 h-3 text-blue-400" /> Tags (separadas por vírgula)
+              </label>
               <input
                 type="text"
                 name="tags"
                 value={formData.tags}
                 onChange={handleChange}
                 placeholder="Ex: entrada, externo, hd"
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500"
+                className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 shadow-inner"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Grupos</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1">
+                <Layers className="w-3 h-3 text-blue-400" /> Grupos
+              </label>
               <input
                 type="text"
                 name="groups"
                 value={formData.groups}
                 onChange={handleChange}
-                placeholder="Ex: Perímetro, Galpão"
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500"
+                placeholder="Ex: Perímetro, Estacionamento"
+                className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 shadow-inner"
               />
             </div>
           </div>
 
-          {/* Test & Capability Detection Output */}
+          {/* Test & Detection Results */}
           {testResult && (
-            <div className={`p-3 rounded-lg border text-xs ${
-              testResult.success ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-rose-950/40 border-rose-800 text-rose-300'
-            }`}>
-              <div className="flex items-center space-x-2 font-medium mb-1">
-                {testResult.success ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <AlertTriangle className="w-4 h-4 text-rose-400" />}
+            <div
+              className={`p-3.5 rounded-xl border text-xs shadow-md ${
+                testResult.success
+                  ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300'
+                  : 'bg-rose-950/40 border-rose-800 text-rose-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2 font-bold mb-1">
+                {testResult.success ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-rose-400" />
+                )}
                 <span>{testResult.message}</span>
               </div>
               {testResult.caps && (
-                <div className="mt-2 pt-2 border-t border-emerald-800/50 flex flex-wrap gap-2 text-[11px]">
-                  <span className="px-1.5 py-0.5 rounded bg-emerald-900/60">ONVIF: {testResult.caps.onvif ? 'Sim' : 'Não'}</span>
-                  <span className="px-1.5 py-0.5 rounded bg-emerald-900/60">RTSP: {testResult.caps.rtsp ? 'Sim' : 'Não'}</span>
-                  <span className="px-1.5 py-0.5 rounded bg-emerald-900/60">PTZ: {testResult.caps.ptz ? 'Sim' : 'Não'}</span>
-                  <span className="px-1.5 py-0.5 rounded bg-emerald-900/60">Substream: {testResult.caps.sub_stream ? 'Sim' : 'Não'}</span>
+                <div className="mt-2 pt-2 border-t border-emerald-800/50 flex flex-wrap gap-2 text-[11px] font-mono font-semibold">
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-900/60 border border-emerald-700">
+                    ONVIF: {testResult.caps.onvif ? 'Sim' : 'Não'}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-900/60 border border-emerald-700">
+                    RTSP: {testResult.caps.rtsp ? 'Sim' : 'Não'}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-900/60 border border-emerald-700">
+                    PTZ: {testResult.caps.ptz ? 'Sim' : 'Não'}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-900/60 border border-emerald-700">
+                    Substream: {testResult.caps.sub_stream ? 'Sim' : 'Não'}
+                  </span>
                 </div>
               )}
             </div>
@@ -370,21 +409,21 @@ export const CameraModal: React.FC<CameraModalProps> = ({ camera, onClose, onSav
         </form>
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t border-slate-800 bg-slate-950/50 flex items-center justify-between">
+        <div className="px-6 py-3.5 border-t border-slate-800/80 bg-slate-950/70 flex items-center justify-between">
           <button
             type="button"
             onClick={handleTestAndProbe}
             disabled={testing}
-            className="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 flex items-center gap-1.5 transition disabled:opacity-50"
+            className="px-3.5 py-2 text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700/80 flex items-center gap-1.5 transition disabled:opacity-50 shadow-sm"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${testing ? 'animate-spin-custom' : ''}`} />
-            {testing ? 'Testando Conexão...' : 'Testar Conexão'}
+            <RefreshCw className={`w-3.5 h-3.5 ${testing ? 'animate-spin-custom text-blue-400' : ''}`} />
+            <span>{testing ? 'Testando...' : 'Testar Conexão'}</span>
           </button>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded transition"
+              className="px-4 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition"
             >
               Cancelar
             </button>
@@ -392,7 +431,7 @@ export const CameraModal: React.FC<CameraModalProps> = ({ camera, onClose, onSav
               type="button"
               onClick={handleSubmit}
               disabled={saving}
-              className="px-4 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white rounded transition disabled:opacity-50"
+              className="px-5 py-2 text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl transition shadow-lg shadow-blue-600/25 disabled:opacity-50"
             >
               {saving ? 'Salvando...' : isEditing ? 'Atualizar Câmera' : 'Salvar Câmera'}
             </button>
@@ -402,3 +441,4 @@ export const CameraModal: React.FC<CameraModalProps> = ({ camera, onClose, onSav
     </div>
   );
 };
+
