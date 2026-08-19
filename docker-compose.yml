@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  cms:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: videocms:latest
+    container_name: videocms
+    restart: unless-stopped
+    ports:
+      - "15000:15000"
+    volumes:
+      - cms-data:/app/data
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - CMS_HOST=0.0.0.0
+      - CMS_PORT=15000
+      - CMS_DB_PATH=/app/data/cms.db
+      - CMS_STATIC_DIR=/app/web/dist
+      - CMS_LOG_LEVEL=info
+      # CMS_SECRET_KEY is loaded from .env (never hardcoded in compose)
+    healthcheck:
+      test: ["CMD", "/app/cms", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+    # NOTA PARA DESCOBERTA MULTICAST (WS-DISCOVERY) NO LINUX:
+    # O protocolo WS-Discovery utiliza pacotes multicast UDP (239.255.255.250:3702).
+    # Em ambientes Linux nativos, caso deseje que o container receba pacotes multicast da LAN,
+    # você pode descomentar a linha abaixo:
+    # network_mode: host
+
+volumes:
+  cms-data:
+    driver: local

@@ -1,0 +1,47 @@
+version: '3.8'
+
+# ==============================================================================
+# VideoCMS Portainer Stack - Modo Host Network (Linux Nativo)
+# ==============================================================================
+# ATENÇÃO:
+# 1. 'network_mode: host' conecta o container diretamente à interface física do host Linux.
+#    Isso viabiliza a recepção nativa de pacotes multicast UDP 3702 do WS-Discovery (ONVIF).
+# 2. Este modo é aplicável primariamente a servidores Linux nativos com Docker Engine.
+#    Em Docker Desktop (macOS / Windows), o tráfego permanece isolado na VM intermediária.
+# 3. No modo host, não se utiliza a diretiva 'ports:'. O serviço escuta em 0.0.0.0:15000.
+# 4. As políticas de segurança de aplicação (validação SSRF, allowlist de sub-redes) continuam
+#    sendo aplicadas integralmente pelo VideoCMS.
+# ==============================================================================
+
+services:
+  cms:
+    image: videocms:1.0.0
+    container_name: videocms
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - cms-data:/app/data
+    environment:
+      CMS_HOST: "0.0.0.0"
+      CMS_PORT: "15000"
+      CMS_DB_PATH: "/app/data/cms.db"
+      CMS_STATIC_DIR: "/app/web/dist"
+      # OBRIGATÓRIA: Chave de criptografia AES-256-GCM para proteger credenciais de câmeras em repouso.
+      CMS_SECRET_KEY: "${CMS_SECRET_KEY}"
+      # OPCIONAIS (com valores padrão seguros):
+      CMS_ALLOWED_NETWORKS: "${CMS_ALLOWED_NETWORKS:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.0/8}"
+      CMS_SCAN_ENABLED: "${CMS_SCAN_ENABLED:-true}"
+      CMS_SCAN_MAX_CONCURRENCY: "${CMS_SCAN_MAX_CONCURRENCY:-32}"
+      CMS_SCAN_TIMEOUT: "${CMS_SCAN_TIMEOUT:-2s}"
+      CMS_CAMERA_HEALTH_INTERVAL: "${CMS_CAMERA_HEALTH_INTERVAL:-30s}"
+      CMS_LOG_LEVEL: "${CMS_LOG_LEVEL:-info}"
+    healthcheck:
+      test: ["CMD", "/app/cms", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  cms-data:
+    driver: local

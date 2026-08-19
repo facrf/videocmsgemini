@@ -1,0 +1,995 @@
+openapi: 3.0.3
+info:
+  title: VideoCMS REST API
+  description: >
+    API REST para a plataforma VideoCMS / VMS de descoberta, gerenciamento,
+    diagnóstico e transmissão ao vivo de câmeras IP e feeds RTSP em rede local.
+  version: 1.0.0
+servers:
+  - url: http://localhost:15000/api
+    description: Servidor Local VideoCMS
+
+paths:
+  /health:
+    get:
+      summary: Verificação de integridade do serviço
+      description: Retorna o status do servidor VideoCMS e a versão atual.
+      responses:
+        '200':
+          description: Servidor operacional
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    type: string
+                    example: VideoCMS
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+
+  /stats:
+    get:
+      summary: Estatísticas operacionais do sistema
+      description: Retorna contadores de câmeras, status de conectividade, streams ativos e clientes SSE.
+      responses:
+        '200':
+          description: Resumo operacional
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemStats'
+
+  /network/interfaces:
+    get:
+      summary: Interfaces de rede locais
+      description: Lista placas de rede ativas e sub-redes IPv4 detectadas na máquina host.
+      responses:
+        '200':
+          description: Lista de interfaces
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NetworkInterfaceInfo'
+
+  /events:
+    get:
+      summary: Stream Server-Sent Events (SSE)
+      description: Conexão unidirecional para recebimento de eventos de câmeras, streams, descobertas e layouts em tempo real.
+      responses:
+        '200':
+          description: Stream SSE contínuo (text/event-stream)
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /cameras:
+    get:
+      summary: Lista catálogo de câmeras
+      description: Retorna lista de câmeras com suporte a filtros por status, grupo, tag, busca e paginação.
+      parameters:
+        - name: search
+          in: query
+          description: Busca por nome, host, fabricante ou modelo
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filtro por status (online, offline, auth_required, error)
+          schema:
+            type: string
+        - name: group
+          in: query
+          description: Filtro por nome do grupo
+          schema:
+            type: string
+        - name: tag
+          in: query
+          description: Filtro por tag
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Quantidade máxima de registros
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          description: Deslocamento para paginação
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de câmeras cadastradas
+          headers:
+            X-Total-Count:
+              schema:
+                type: integer
+              description: Total de registros encontrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Camera'
+    post:
+      summary: Cadastra nova câmera IP
+      description: Cadastra manualmente uma câmera no catálogo com criptografia AES-256-GCM em repouso.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CameraInput'
+      responses:
+        '201':
+          description: Câmera criada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Camera'
+        '400':
+          $ref: '#/components/responses/400Error'
+
+  /cameras/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Detalhes de uma câmera
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Camera'
+        '404':
+          $ref: '#/components/responses/404Error'
+    put:
+      summary: Atualiza configurações da câmera
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CameraInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Camera'
+        '404':
+          $ref: '#/components/responses/404Error'
+    delete:
+      summary: Remove câmera do catálogo
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/404Error'
+
+  /cameras/{id}/update-ip:
+    post:
+      summary: Atualiza endereço IP da câmera (DHCP)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - host
+              properties:
+                host:
+                  type: string
+                  example: 192.168.1.105
+                port:
+                  type: integer
+                  example: 80
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  /cameras/{id}/test:
+    post:
+      summary: Testa conectividade e autenticação
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  error:
+                    type: string
+
+  /cameras/{id}/capabilities:
+    get:
+      summary: Consulta recursos e perfis de vídeo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CameraCapabilities'
+
+  /cameras/{id}/diagnostics:
+    get:
+      summary: Executa diagnóstico técnico em 10 etapas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiagnosticReport'
+
+  /cameras/{id}/snapshot:
+    get:
+      summary: Captura imagem JPEG instantânea
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Imagem JPEG
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+
+  /cameras/{id}/live:
+    get:
+      summary: Stream de vídeo ao vivo (MJPEG)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: profile
+          in: query
+          description: Perfil de vídeo (sub para mosaico, main para ampliado)
+          schema:
+            type: string
+            enum: [main, sub]
+            default: sub
+      responses:
+        '200':
+          description: Stream contínuo multipart/x-mixed-replace
+          content:
+            multipart/x-mixed-replace:
+              schema:
+                type: string
+
+  /discovery:
+    get:
+      summary: Lista tarefas recentes de descoberta
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscoveryJob'
+    post:
+      summary: Inicia nova tarefa de descoberta (WS-Discovery + CIDR)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                interface_name:
+                  type: string
+                  example: eth0
+                cidr:
+                  type: string
+                  example: 192.168.1.0/24
+      responses:
+        '202':
+          description: Tarefa iniciada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryJob'
+
+  /discovery/{id}:
+    get:
+      summary: Detalhes e dispositivos de uma tarefa de descoberta
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryJob'
+
+  /discovery/{id}/cancel:
+    post:
+      summary: Cancela tarefa de descoberta em andamento
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /discovery/{id}/devices/{deviceId}/probe:
+    post:
+      summary: Sonda dispositivo descoberto com credenciais
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryResult'
+
+  /discovery/{id}/devices/{deviceId}/add:
+    post:
+      summary: Importa dispositivo descoberto para o catálogo de câmeras
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Camera'
+
+  /layouts:
+    get:
+      summary: Lista layouts de mosaico salvos
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Layout'
+    post:
+      summary: Salva novo layout de mosaico
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LayoutInput'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Layout'
+
+  /layouts/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Detalhes de um layout
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Layout'
+    put:
+      summary: Atualiza layout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LayoutInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Layout'
+    delete:
+      summary: Remove layout
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /groups:
+    get:
+      summary: Lista grupos de câmeras
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Group'
+    post:
+      summary: Cria novo grupo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+
+  /streams:
+    get:
+      summary: Métricas de streams de vídeo ativos
+      description: Retorna sessões de ingestão ativas, quantidade de espectadores e tempo de execução sem expor credenciais.
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    key:
+                      type: string
+                    camera_id:
+                      type: string
+                    camera_name:
+                      type: string
+                    profile:
+                      type: string
+                    codec:
+                      type: string
+                    viewers:
+                      type: integer
+                    started_at:
+                      type: string
+                      format: date-time
+                    running_time:
+                      type: number
+                    last_error:
+                      type: string
+
+components:
+  responses:
+    400Error:
+      description: Requisição inválida
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    404Error:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+
+  schemas:
+    ErrorEnvelope:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              example: VALIDATION_FAILED
+            message:
+              type: string
+              example: O campo host é obrigatório
+
+    SystemStats:
+      type: object
+      properties:
+        total_cameras:
+          type: integer
+        online:
+          type: integer
+        offline:
+          type: integer
+        auth_required:
+          type: integer
+        error_status:
+          type: integer
+        active_streams:
+          type: integer
+        sse_clients:
+          type: integer
+        recent_jobs:
+          type: integer
+
+    NetworkInterfaceInfo:
+      type: object
+      properties:
+        name:
+          type: string
+        hardware_addr:
+          type: string
+        ips:
+          type: array
+          items:
+            type: string
+        subnets:
+          type: array
+          items:
+            type: string
+
+    StreamProfile:
+      type: object
+      properties:
+        name:
+          type: string
+        token:
+          type: string
+        encoder:
+          type: string
+        width:
+          type: integer
+        height:
+          type: integer
+        fps:
+          type: integer
+        rtsp_uri:
+          type: string
+        is_substream:
+          type: boolean
+
+    CameraCapabilities:
+      type: object
+      properties:
+        onvif:
+          type: boolean
+        rtsp:
+          type: boolean
+        ptz:
+          type: boolean
+        audio:
+          type: boolean
+        snapshot:
+          type: boolean
+        events:
+          type: boolean
+        main_stream:
+          type: boolean
+        sub_stream:
+          type: boolean
+        profiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/StreamProfile'
+
+    Camera:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        host:
+          type: string
+        port:
+          type: integer
+        rtsp_port:
+          type: integer
+        manufacturer:
+          type: string
+        model:
+          type: string
+        serial_number:
+          type: string
+        mac_address:
+          type: string
+        firmware_version:
+          type: string
+        onvif_url:
+          type: string
+        rtsp_path:
+          type: string
+        substream_path:
+          type: string
+        snapshot_path:
+          type: string
+        username:
+          type: string
+        has_password:
+          type: boolean
+        preferred_profile:
+          type: string
+        preferred_transport:
+          type: string
+        codec:
+          type: string
+        capabilities:
+          $ref: '#/components/schemas/CameraCapabilities'
+        enabled:
+          type: boolean
+        status:
+          type: string
+          enum: [unknown, online, offline, auth_required, unsupported, error]
+        status_message:
+          type: string
+        last_seen_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        tags:
+          type: array
+          items:
+            type: string
+        groups:
+          type: array
+          items:
+            type: string
+
+    CameraInput:
+      type: object
+      required:
+        - name
+        - host
+      properties:
+        name:
+          type: string
+        host:
+          type: string
+        port:
+          type: integer
+          default: 80
+        rtsp_port:
+          type: integer
+          default: 554
+        manufacturer:
+          type: string
+        model:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+        preferred_transport:
+          type: string
+          enum: [tcp, udp]
+          default: tcp
+        onvif_url:
+          type: string
+        rtsp_path:
+          type: string
+        substream_path:
+          type: string
+        enabled:
+          type: boolean
+          default: true
+        tags:
+          type: array
+          items:
+            type: string
+        groups:
+          type: array
+          items:
+            type: string
+
+    DiagnosticStage:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [OK, Warning, Failed, Skipped]
+        details:
+          type: string
+        duration_ms:
+          type: integer
+
+    DiagnosticReport:
+      type: object
+      properties:
+        camera_id:
+          type: string
+        camera_name:
+          type: string
+        host:
+          type: string
+        stages:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiagnosticStage'
+        passed:
+          type: boolean
+        summary:
+          type: string
+        capabilities:
+          $ref: '#/components/schemas/CameraCapabilities'
+        tested_at:
+          type: string
+          format: date-time
+
+    DiscoveryResult:
+      type: object
+      properties:
+        id:
+          type: string
+        job_id:
+          type: string
+        ip:
+          type: string
+        port:
+          type: integer
+        mac_address:
+          type: string
+        manufacturer:
+          type: string
+        model:
+          type: string
+        onvif_url:
+          type: string
+        discovered_via:
+          type: string
+          enum: [ws_discovery, scan]
+        probe_status:
+          type: string
+          enum: [pending, probed, auth_required, unsupported]
+        probe_details:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+
+    DiscoveryJob:
+      type: object
+      properties:
+        id:
+          type: string
+        interface_name:
+          type: string
+        cidr:
+          type: string
+        status:
+          type: string
+          enum: [queued, running, completed, cancelled, failed]
+        progress:
+          type: integer
+        total_hosts:
+          type: integer
+        scanned_hosts:
+          type: integer
+        found_devices:
+          type: integer
+        error_message:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiscoveryResult'
+
+    LayoutItem:
+      type: object
+      required:
+        - position
+        - camera_id
+      properties:
+        position:
+          type: integer
+          example: 0
+        camera_id:
+          type: string
+        preferred_profile:
+          type: string
+          enum: [auto, main, sub]
+          default: auto
+
+    Layout:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        grid_size:
+          type: integer
+          example: 4
+        is_default:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LayoutItem'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    LayoutInput:
+      type: object
+      required:
+        - name
+        - grid_size
+      properties:
+        name:
+          type: string
+          example: Mosaico Principal
+        grid_size:
+          type: integer
+          example: 4
+        is_default:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LayoutItem'
+
+    Group:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        camera_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time

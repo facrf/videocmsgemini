@@ -1,0 +1,18 @@
+.git
+.gitignore
+.env
+*.db
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+data/
+bin/
+tmp/
+logs/
+coverage/
+test_*.sqlite
+
+# Web build artifacts & node_modules from host
+web/node_modules/
+web/dist/
+.tools/
