@@ -332,3 +332,136 @@ func (s *Service) GetSnapshot(ctx context.Context, id string) ([]byte, string, e
 
 	return data, ctype, nil
 }
+
+// PTZMove sends continuous Pan, Tilt, Zoom velocity commands to the camera.
+func (s *Service) PTZMove(ctx context.Context, id string, pan, tilt, zoom float64) error {
+	cam, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	pass, _ := s.repo.GetDecryptedPassword(ctx, id)
+	port := cam.Port
+	if port <= 0 {
+		port = 80
+	}
+	onvifURL := cam.ONVIFURL
+	if onvifURL == "" {
+		onvifURL = fmt.Sprintf("http://%s:%d/onvif/device_service", cam.Host, port)
+	}
+
+	client := s.validator.NewSafeHTTPClient(3 * time.Second)
+	onvifClient := onvif.NewClient(onvifURL, cam.Username, pass, client)
+
+	caps, err := onvifClient.GetCapabilities(ctx)
+	if err != nil || caps.PTZXAddr == "" {
+		return fmt.Errorf("camera does not support PTZ service")
+	}
+
+	profs, err := onvifClient.GetProfiles(ctx, caps.MediaXAddr)
+	if err != nil || len(profs) == 0 {
+		return fmt.Errorf("failed to get media profiles for PTZ")
+	}
+
+	ptz := onvif.NewONVIFPTZ(onvifClient, caps.PTZXAddr)
+	return ptz.ContinuousMove(ctx, profs[0].Token, pan, tilt, zoom)
+}
+
+// PTZStop stops all active Pan, Tilt, Zoom movements on the camera.
+func (s *Service) PTZStop(ctx context.Context, id string) error {
+	cam, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	pass, _ := s.repo.GetDecryptedPassword(ctx, id)
+	port := cam.Port
+	if port <= 0 {
+		port = 80
+	}
+	onvifURL := cam.ONVIFURL
+	if onvifURL == "" {
+		onvifURL = fmt.Sprintf("http://%s:%d/onvif/device_service", cam.Host, port)
+	}
+
+	client := s.validator.NewSafeHTTPClient(3 * time.Second)
+	onvifClient := onvif.NewClient(onvifURL, cam.Username, pass, client)
+
+	caps, err := onvifClient.GetCapabilities(ctx)
+	if err != nil || caps.PTZXAddr == "" {
+		return fmt.Errorf("camera does not support PTZ service")
+	}
+
+	profs, err := onvifClient.GetProfiles(ctx, caps.MediaXAddr)
+	if err != nil || len(profs) == 0 {
+		return fmt.Errorf("failed to get media profiles for PTZ")
+	}
+
+	ptz := onvif.NewONVIFPTZ(onvifClient, caps.PTZXAddr)
+	return ptz.Stop(ctx, profs[0].Token)
+}
+
+// PTZGetPresets retrieves saved PTZ presets for a camera.
+func (s *Service) PTZGetPresets(ctx context.Context, id string) ([]onvif.PTZPreset, error) {
+	cam, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	pass, _ := s.repo.GetDecryptedPassword(ctx, id)
+	port := cam.Port
+	if port <= 0 {
+		port = 80
+	}
+	onvifURL := cam.ONVIFURL
+	if onvifURL == "" {
+		onvifURL = fmt.Sprintf("http://%s:%d/onvif/device_service", cam.Host, port)
+	}
+
+	client := s.validator.NewSafeHTTPClient(3 * time.Second)
+	onvifClient := onvif.NewClient(onvifURL, cam.Username, pass, client)
+
+	caps, err := onvifClient.GetCapabilities(ctx)
+	if err != nil || caps.PTZXAddr == "" {
+		return nil, fmt.Errorf("camera does not support PTZ service")
+	}
+
+	profs, err := onvifClient.GetProfiles(ctx, caps.MediaXAddr)
+	if err != nil || len(profs) == 0 {
+		return nil, fmt.Errorf("failed to get media profiles for PTZ")
+	}
+
+	ptz := onvif.NewONVIFPTZ(onvifClient, caps.PTZXAddr)
+	return ptz.GetPresets(ctx, profs[0].Token)
+}
+
+// PTZGotoPreset moves camera to a specified preset position.
+func (s *Service) PTZGotoPreset(ctx context.Context, id, presetToken string) error {
+	cam, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	pass, _ := s.repo.GetDecryptedPassword(ctx, id)
+	port := cam.Port
+	if port <= 0 {
+		port = 80
+	}
+	onvifURL := cam.ONVIFURL
+	if onvifURL == "" {
+		onvifURL = fmt.Sprintf("http://%s:%d/onvif/device_service", cam.Host, port)
+	}
+
+	client := s.validator.NewSafeHTTPClient(3 * time.Second)
+	onvifClient := onvif.NewClient(onvifURL, cam.Username, pass, client)
+
+	caps, err := onvifClient.GetCapabilities(ctx)
+	if err != nil || caps.PTZXAddr == "" {
+		return fmt.Errorf("camera does not support PTZ service")
+	}
+
+	profs, err := onvifClient.GetProfiles(ctx, caps.MediaXAddr)
+	if err != nil || len(profs) == 0 {
+		return fmt.Errorf("failed to get media profiles for PTZ")
+	}
+
+	ptz := onvif.NewONVIFPTZ(onvifClient, caps.PTZXAddr)
+	return ptz.GotoPreset(ctx, profs[0].Token, presetToken)
+}
+

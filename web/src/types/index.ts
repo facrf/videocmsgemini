@@ -150,3 +150,22 @@ export interface SystemStats {
   sse_clients: number;
   recent_jobs: number;
 }
+
+export interface PTZPreset {
+  token: string;
+  name: string;
+}
+
+export interface CameraTestResult {
+  id: string;
+  name: string;
+  host: string;
+  success: boolean;
+  error?: string;
+}
+
+export interface BatchTestResponse {
+  total: number;
+  results: CameraTestResult[];
+}
+

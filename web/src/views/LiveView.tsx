@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   LayoutGrid,
   Save,
@@ -7,6 +7,9 @@ import {
   Plus,
   X,
   Search,
+  Play,
+  Pause,
+  Sparkles,
 } from 'lucide-react';
 import { Camera, Layout } from '../types';
 import { CameraTile } from '../components/CameraTile';
@@ -37,6 +40,11 @@ export const LiveView: React.FC<LiveViewProps> = ({
   const [selectedSlotForAssignment, setSelectedSlotForAssignment] = useState<number | null>(null);
   const [refreshCounter, setRefreshCounter] = useState(0);
 
+  // Auto-Cycle / Carousel state
+  const [isPatrolling, setIsPatrolling] = useState(false);
+  const patrolIntervalSec = 10;
+  const patrolIndexRef = useRef(0);
+
   const gridSizes = [1, 4, 6, 9, 12, 16, 25, 32];
 
   // Auto-populate default layout or first N cameras on load
@@ -54,6 +62,23 @@ export const LiveView: React.FC<LiveViewProps> = ({
       }
     }
   }, [cameras, layouts]);
+
+  // Patrol / Auto-Cycle timer
+  useEffect(() => {
+    if (!isPatrolling || cameras.length <= gridSize) return;
+
+    const timer = setInterval(() => {
+      patrolIndexRef.current = (patrolIndexRef.current + gridSize) % cameras.length;
+      const nextBatch: Record<number, Camera> = {};
+      for (let i = 0; i < gridSize; i++) {
+        const camIndex = (patrolIndexRef.current + i) % cameras.length;
+        nextBatch[i] = cameras[camIndex];
+      }
+      setAssignedCameras(nextBatch);
+    }, patrolIntervalSec * 1000);
+
+    return () => clearInterval(timer);
+  }, [isPatrolling, cameras, gridSize, patrolIntervalSec]);
 
   const applyLayout = (layout: Layout) => {
     setSelectedLayoutId(layout.id);
@@ -97,6 +122,15 @@ export const LiveView: React.FC<LiveViewProps> = ({
       delete next[slot];
       return next;
     });
+  };
+
+  const handleAutoFillOnline = () => {
+    const online = cameras.filter((c) => c.status === 'online');
+    const newMap: Record<number, Camera> = {};
+    online.slice(0, gridSize).forEach((c, idx) => {
+      newMap[idx] = c;
+    });
+    setAssignedCameras(newMap);
   };
 
   const openAssignDrawer = (slot: number) => {
@@ -156,23 +190,23 @@ export const LiveView: React.FC<LiveViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 select-none overflow-hidden relative">
+    <div className="flex flex-col h-full bg-[#060911] select-none overflow-hidden relative">
       {/* Live View Modern Control Toolbar */}
-      <div className="h-13 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 px-4 flex items-center justify-between z-20 shadow-md">
+      <div className="h-14 bg-[#0a0f1d]/95 backdrop-blur-xl border-b border-slate-800/80 px-4 sm:px-6 flex items-center justify-between z-20 shadow-xl gap-2 flex-wrap sm:flex-nowrap">
         {/* Left: Grid Size Selector */}
-        <div className="flex items-center space-x-1.5 sm:space-x-2">
-          <div className="flex items-center space-x-1 bg-slate-950/70 p-1 rounded-xl border border-slate-800/80 shadow-inner">
-            <span className="text-[10px] font-bold text-slate-500 uppercase px-2 hidden sm:inline-block">
+        <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 bg-slate-950 p-1 rounded-2xl border border-slate-800/90 shadow-inner">
+            <span className="text-[10px] font-black text-slate-500 uppercase px-2 hidden md:inline-block font-mono">
               Grade:
             </span>
             {gridSizes.map((size) => (
               <button
                 key={size}
                 onClick={() => handleGridSizeChange(size)}
-                className={`px-2.5 py-1 text-xs font-mono font-bold rounded-lg transition-all duration-150 ${
+                className={`px-3 py-1.5 text-xs font-mono font-bold rounded-xl transition-all duration-200 ${
                   gridSize === size && maximizedSlot === null
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 ring-1 ring-blue-400/40'
+                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-900'
                 }`}
               >
                 {size}
@@ -181,19 +215,19 @@ export const LiveView: React.FC<LiveViewProps> = ({
           </div>
         </div>
 
-        {/* Center: Saved Layouts Dropdown */}
+        {/* Center: Layouts Dropdown & Auto-fill */}
         <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-2 bg-slate-950/70 px-3 py-1.5 rounded-xl border border-slate-800/80 shadow-inner">
-            <LayoutGrid className="w-3.5 h-3.5 text-blue-400" />
+          <div className="flex items-center space-x-2 bg-slate-950 px-3.5 py-1.5 rounded-2xl border border-slate-800/90 shadow-inner">
+            <LayoutGrid className="w-4 h-4 text-cyan-400" />
             <select
               value={selectedLayoutId}
               onChange={(e) => handleSelectLayout(e.target.value)}
-              className="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer font-medium"
+              className="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer font-bold font-mono"
             >
-              <option value="" className="bg-slate-900 text-slate-300">Layouts Salvos...</option>
+              <option value="" className="bg-slate-900 text-slate-400">Layouts Salvos...</option>
               {layouts.map((l) => (
                 <option key={l.id} value={l.id} className="bg-slate-900 text-white">
-                  {l.name} ({l.grid_size}x)
+                  {l.name} ({l.grid_size}x) {l.is_default ? '★' : ''}
                 </option>
               ))}
             </select>
@@ -201,61 +235,84 @@ export const LiveView: React.FC<LiveViewProps> = ({
 
           <button
             onClick={() => setShowSaveModal(true)}
-            title="Salvar layout atual"
-            className="px-3 py-1.5 text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700/80 flex items-center gap-1.5 transition shadow-sm hover:border-slate-600"
+            title="Salvar layout atual com posições"
+            className="px-3.5 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-2xl border border-slate-700/80 flex items-center gap-1.5 transition shadow-sm hover:scale-105"
           >
-            <Save className="w-3.5 h-3.5 text-blue-400" />
+            <Save className="w-3.5 h-3.5 text-cyan-400" />
             <span className="hidden md:inline">Salvar Layout</span>
+          </button>
+
+          <button
+            onClick={handleAutoFillOnline}
+            title="Preencher grade com câmeras online"
+            className="px-3 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-2xl border border-slate-700/80 hidden lg:flex items-center gap-1.5 transition shadow-sm hover:scale-105"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Preencher Online</span>
           </button>
         </div>
 
-        {/* Right: Camera Drawer & Refresh */}
+        {/* Right: Patrol, Drawer & Refresh */}
         <div className="flex items-center space-x-2">
+          {/* Patrol Carousel Toggle */}
+          <button
+            onClick={() => setIsPatrolling(!isPatrolling)}
+            title={isPatrolling ? 'Pausar Rotação Automática' : 'Iniciar Rotação Automática (Patrulha)'}
+            className={`px-3 py-2 text-xs font-bold rounded-2xl border transition-all flex items-center gap-1.5 shadow-md ${
+              isPatrolling
+                ? 'bg-emerald-950 text-emerald-300 border-emerald-700/80 shadow-[0_0_10px_rgba(16,185,129,0.2)] animate-pulse'
+                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-700/80'
+            }`}
+          >
+            {isPatrolling ? <Pause className="w-3.5 h-3.5 text-emerald-400" /> : <Play className="w-3.5 h-3.5 text-slate-400" />}
+            <span className="hidden sm:inline">Patrulha ({patrolIntervalSec}s)</span>
+          </button>
+
           <button
             onClick={() => {
               setSelectedSlotForAssignment(null);
               setShowDrawer(!showDrawer);
             }}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all flex items-center gap-2 shadow-sm ${
+            className={`px-3.5 py-2 text-xs font-bold rounded-2xl border transition-all flex items-center gap-2 shadow-md ${
               showDrawer
-                ? 'bg-blue-600/20 text-blue-400 border-blue-500/50 shadow-blue-500/10'
-                : 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 border-slate-700/80'
+                ? 'bg-blue-600/30 text-blue-300 border-blue-500 shadow-blue-500/20'
+                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-700/80'
             }`}
           >
-            <CameraIcon className="w-3.5 h-3.5 text-blue-400" />
+            <CameraIcon className="w-4 h-4 text-blue-400" />
             <span>Câmeras ({cameras.length})</span>
           </button>
 
           <button
             onClick={refreshAllStreams}
-            title="Recarregar todos os streams de vídeo"
-            className="p-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 transition shadow-sm"
+            title="Recarregar todos os streams"
+            className="p-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 transition shadow-md hover:scale-105"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className="w-4 h-4" />
           </button>
         </div>
       </div>
 
       {/* Main Grid Viewport */}
-      <div className="flex-1 p-2 sm:p-2.5 bg-slate-950 overflow-hidden relative">
+      <div className="flex-1 p-2 sm:p-3 bg-[#060911] overflow-hidden relative">
         {renderSlots()}
 
         {/* Slide-over Camera Assignment Drawer */}
         {showDrawer && (
-          <div className="absolute top-0 right-0 bottom-0 w-80 bg-slate-900/95 backdrop-blur-xl border-l border-slate-800/90 shadow-2xl z-30 flex flex-col animate-in slide-in-from-right duration-200">
-            <div className="p-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-950/70">
-              <div className="flex items-center space-x-2.5">
-                <div className="p-1.5 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30">
-                  <CameraIcon className="w-4 h-4" />
+          <div className="absolute top-0 right-0 bottom-0 w-84 bg-[#0a0f1d]/95 backdrop-blur-2xl border-l border-slate-800 shadow-2xl z-30 flex flex-col animate-in slide-in-from-right duration-200">
+            <div className="p-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-950">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30 shadow-inner">
+                  <CameraIcon className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-xs font-bold text-white block">
+                  <span className="text-xs font-black text-white block">
                     {selectedSlotForAssignment !== null
-                      ? `Slot #${selectedSlotForAssignment + 1}`
+                      ? `Vincular ao Slot #${selectedSlotForAssignment + 1}`
                       : 'Catálogo de Câmeras'}
                   </span>
                   <span className="text-[10px] text-slate-400">
-                    {selectedSlotForAssignment !== null ? 'Selecione para vincular' : 'Arraste ou clique para adicionar'}
+                    Clique em uma câmera para posicioná-la na grade
                   </span>
                 </div>
               </div>
@@ -264,29 +321,29 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   setShowDrawer(false);
                   setSelectedSlotForAssignment(null);
                 }}
-                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+                className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-900 transition"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Search filter in drawer */}
-            <div className="p-3 border-b border-slate-800/60 bg-slate-950/40">
+            <div className="p-3.5 border-b border-slate-800/80 bg-slate-950/60">
               <div className="relative">
-                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
                 <input
                   type="text"
                   value={drawerSearch}
                   onChange={(e) => setDrawerSearch(e.target.value)}
-                  placeholder="Filtrar por nome ou IP..."
-                  className="w-full pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                  placeholder="Filtrar por nome, IP ou fabricante..."
+                  className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 shadow-inner font-mono"
                 />
               </div>
             </div>
 
-            <div className="p-3 overflow-y-auto flex-1 space-y-2">
+            <div className="p-3.5 overflow-y-auto flex-1 space-y-2.5">
               {filteredDrawerCameras.length === 0 ? (
-                <div className="text-center py-12 text-xs text-slate-500">
+                <div className="text-center py-16 text-xs text-slate-500">
                   Nenhuma câmera encontrada.
                 </div>
               ) : (
@@ -308,20 +365,20 @@ export const LiveView: React.FC<LiveViewProps> = ({
                         }
                         handleAssignCameraToSlot(targetSlot, cam);
                       }}
-                      className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 hover:border-blue-500/50 hover:bg-slate-800/70 cursor-pointer transition-all flex items-center justify-between group text-xs shadow-sm"
+                      className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800/90 hover:border-blue-500/60 hover:bg-slate-900/90 cursor-pointer transition-all flex items-center justify-between group text-xs shadow-md"
                     >
-                      <div className="flex items-center space-x-2.5 min-w-0">
+                      <div className="flex items-center space-x-3 min-w-0">
                         <span
                           className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
                             cam.status === 'online'
-                              ? 'bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.8)]'
+                              ? 'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]'
                               : cam.status === 'auth_required'
-                              ? 'bg-amber-400'
-                              : 'bg-rose-500'
+                              ? 'bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.8)]'
+                              : 'bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]'
                           }`}
                         />
                         <div className="truncate">
-                          <p className="font-bold text-slate-200 truncate group-hover:text-blue-400 transition-colors">
+                          <p className="font-bold text-white truncate group-hover:text-blue-400 transition-colors font-mono">
                             {cam.name}
                           </p>
                           <p className="text-[10px] font-mono text-slate-400 truncate">
@@ -330,12 +387,12 @@ export const LiveView: React.FC<LiveViewProps> = ({
                         </div>
                       </div>
                       {isAssigned ? (
-                        <span className="text-[10px] font-mono text-blue-400 bg-blue-950/60 px-2 py-0.5 rounded-full border border-blue-800/40">
+                        <span className="text-[10px] font-mono font-bold text-blue-400 bg-blue-950/80 px-2.5 py-1 rounded-full border border-blue-800/50">
                           Na grade
                         </span>
                       ) : (
-                        <div className="p-1 rounded-lg bg-slate-800 group-hover:bg-blue-600 group-hover:text-white text-slate-400 transition">
-                          <Plus className="w-3.5 h-3.5" />
+                        <div className="p-1.5 rounded-xl bg-slate-900 group-hover:bg-blue-600 group-hover:text-white text-slate-400 transition">
+                          <Plus className="w-4 h-4" />
                         </div>
                       )}
                     </div>
@@ -359,4 +416,3 @@ export const LiveView: React.FC<LiveViewProps> = ({
     </div>
   );
 };
-

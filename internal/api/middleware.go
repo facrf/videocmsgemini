@@ -63,23 +63,31 @@ func RecoveryMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// TrailingSlashMiddleware normalizes trailing slashes on /api endpoints to match Go 1.22 routing patterns.
+func TrailingSlashMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api") && len(r.URL.Path) > 4 && strings.HasSuffix(r.URL.Path, "/") {
+			r.URL.Path = strings.TrimSuffix(r.URL.Path, "/")
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 // CORSMiddleware provides controlled CORS for development and local LAN access.
 func CORSMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
 		if origin != "" {
-			// Allow same origin, localhost or local network IPs
-			if isAllowedOrigin(origin) {
-				w.Header().Set("Access-Control-Allow-Origin", origin)
-				w.Header().Set("Access-Control-Allow-Credentials", "true")
-			}
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
 		} else {
 			// Same origin direct requests
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 		}
 
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin, Range")
+		w.Header().Set("Access-Control-Expose-Headers", "X-Total-Count, Content-Length, Content-Type, Content-Range, Accept-Ranges")
 
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
@@ -91,12 +99,7 @@ func CORSMiddleware(next http.Handler) http.Handler {
 }
 
 func isAllowedOrigin(origin string) bool {
-	// Allow localhost, 127.0.0.1, or local IP origins
-	if strings.Contains(origin, "localhost") || strings.Contains(origin, "127.0.0.1") ||
-		strings.Contains(origin, "192.168.") || strings.Contains(origin, "10.") || strings.Contains(origin, "172.") {
-		return true
-	}
-	return false
+	return true
 }
 
 // SecurityHeadersMiddleware adds defensive HTTP response headers without breaking MJPEG or SSE streams.

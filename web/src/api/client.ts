@@ -77,10 +77,31 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ password }),
     }),
+  testAllCameras: () =>
+    request<{ total: number; results: Array<{ id: string; name: string; host: string; success: boolean; error?: string }> }>('/cameras/test-all', {
+      method: 'POST',
+    }),
   getCameraCapabilities: (id: string) => request<CameraCapabilities>(`/cameras/${id}/capabilities`),
   getCameraDiagnostics: (id: string) => request<DiagnosticReport>(`/cameras/${id}/diagnostics`),
   getSnapshotUrl: (id: string) => `${API_BASE}/cameras/${id}/snapshot?t=${Date.now()}`,
   getLiveStreamUrl: (id: string, profile = 'sub') => `${API_BASE}/cameras/${id}/live?profile=${profile}`,
+
+  // PTZ Controls
+  ptzMove: (id: string, pan: number, tilt: number, zoom: number) =>
+    request<{ success: boolean; message: string }>(`/cameras/${id}/ptz/move`, {
+      method: 'POST',
+      body: JSON.stringify({ pan, tilt, zoom }),
+    }),
+  ptzStop: (id: string) =>
+    request<{ success: boolean; message: string }>(`/cameras/${id}/ptz/stop`, {
+      method: 'POST',
+    }),
+  ptzGetPresets: (id: string) =>
+    request<Array<{ token: string; name: string }>>(`/cameras/${id}/ptz/presets`),
+  ptzGotoPreset: (id: string, presetId: string) =>
+    request<{ success: boolean; message: string }>(`/cameras/${id}/ptz/presets/${presetId}/goto`, {
+      method: 'POST',
+    }),
 
   // Discovery
   startDiscovery: (iface = '', cidr = '') =>
@@ -117,6 +138,8 @@ export const api = {
   listGroups: () => request<Group[]>('/groups'),
   createGroup: (name: string, description = '') =>
     request<Group>('/groups', { method: 'POST', body: JSON.stringify({ name, description }) }),
+  deleteGroup: (id: string) =>
+    request<{ message: string }>(`/groups/${id}`, { method: 'DELETE' }),
 
   // Active Streams
   listActiveStreams: () => request<any[]>('/streams'),

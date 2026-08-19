@@ -265,3 +265,11 @@ func (r *Repository) CreateGroup(ctx context.Context, name, description string) 
 	}
 	return g, nil
 }
+
+// DeleteGroup deletes a camera group by ID.
+func (r *Repository) DeleteGroup(ctx context.Context, id string) error {
+	_, _ = r.db.ExecContext(ctx, "DELETE FROM camera_groups WHERE group_id = ?", id)
+	_, err := r.db.ExecContext(ctx, "DELETE FROM groups WHERE id = ?", id)
+	return err
+}
+

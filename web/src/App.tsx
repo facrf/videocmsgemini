@@ -13,6 +13,7 @@ import { CameraModal } from './components/CameraModal';
 import { Camera, DiscoveryJob, Layout, SystemStats } from './types';
 import { api } from './api/client';
 import { useEvents, SSEEvent } from './hooks/useEvents';
+import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
 interface Toast {
   id: string;
@@ -41,7 +42,7 @@ export function App() {
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
+    }, 4500);
   }, []);
 
   const loadData = useCallback(async () => {
@@ -74,6 +75,9 @@ export function App() {
       if (event.type.startsWith('camera.')) {
         api.listCameras().then(setCameras).catch(() => {});
         api.getStats().then(setStats).catch(() => {});
+        if (event.type === 'camera.created') {
+          showToast(`Nova câmera adicionada ao sistema.`, 'info');
+        }
       } else if (event.type.startsWith('discovery.')) {
         api.listDiscoveryJobs().then(setRecentJobs).catch(() => {});
         api.getStats().then(setStats).catch(() => {});
@@ -83,19 +87,20 @@ export function App() {
         api.getStats().then(setStats).catch(() => {});
       }
     },
-    []
+    [showToast]
   );
 
   const { connected: sseConnected } = useEvents(handleSSEEvent);
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 overflow-hidden select-none">
+    <div className="flex flex-col h-screen w-screen bg-[#060911] text-slate-100 overflow-hidden select-none">
       {/* Top Header */}
       <Header
         stats={stats}
         sseConnected={sseConnected}
         onRefresh={loadData}
         isRefreshing={isRefreshing}
+        onAddCamera={() => setShowAddCameraModal(true)}
       />
 
       {/* Main Area: Sidebar + Content */}
@@ -107,7 +112,7 @@ export function App() {
           discoveredCount={recentJobs.find((j) => j.status === 'running')?.found_devices}
         />
 
-        <main className="flex-1 bg-slate-950 overflow-hidden relative">
+        <main className="flex-1 bg-[#060911] overflow-hidden relative">
           {activeTab === 'dashboard' && (
             <DashboardView
               stats={stats}
@@ -117,6 +122,7 @@ export function App() {
               onAddCamera={() => setShowAddCameraModal(true)}
               onOpenSnapshot={(cam) => setSnapshotCamera(cam)}
               onOpenDiagnostics={(cam) => setDiagnosticsCamera(cam)}
+              onRefresh={loadData}
             />
           )}
 
@@ -190,20 +196,35 @@ export function App() {
         />
       )}
 
-      {/* Toast Container */}
+      {/* High-Tech Toast Notifications */}
       <div className="fixed bottom-5 right-5 z-50 flex flex-col space-y-2.5 pointer-events-none">
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`p-3.5 rounded-2xl shadow-2xl text-xs font-semibold border pointer-events-auto backdrop-blur-md transition-all duration-300 max-w-sm flex items-center space-x-3 ${
+            className={`p-4 rounded-2xl shadow-2xl text-xs font-bold border pointer-events-auto backdrop-blur-xl transition-all duration-300 max-w-sm flex items-center justify-between space-x-3 animate-in slide-in-from-bottom-2 ${
               t.type === 'success'
-                ? 'bg-emerald-950/95 text-emerald-200 border-emerald-800/80 shadow-emerald-950/50'
+                ? 'bg-emerald-950/95 text-emerald-200 border-emerald-700/80 shadow-emerald-950/50'
                 : t.type === 'error'
-                ? 'bg-rose-950/95 text-rose-200 border-rose-800/80 shadow-rose-950/50'
-                : 'bg-slate-900/95 text-slate-200 border-slate-700/80 shadow-slate-950/50'
+                ? 'bg-rose-950/95 text-rose-200 border-rose-700/80 shadow-rose-950/50'
+                : 'bg-slate-900/95 text-cyan-200 border-slate-700/80 shadow-slate-950/50'
             }`}
           >
-            <span className="leading-snug">{t.message}</span>
+            <div className="flex items-center space-x-2.5">
+              {t.type === 'success' ? (
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+              ) : t.type === 'error' ? (
+                <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />
+              ) : (
+                <Info className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+              )}
+              <span className="leading-snug">{t.message}</span>
+            </div>
+            <button
+              onClick={() => setToasts((prev) => prev.filter((item) => item.id !== t.id))}
+              className="text-slate-400 hover:text-white p-1"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         ))}
       </div>

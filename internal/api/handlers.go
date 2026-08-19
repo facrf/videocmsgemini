@@ -65,7 +65,8 @@ func NewServer(
 func (s *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
 
-	// System / Stats / Health
+	// Root API Info & System / Stats / Health
+	mux.HandleFunc("GET /api", s.handleAPIIndex)
 	mux.HandleFunc("GET /api/health", s.handleHealth)
 	mux.HandleFunc("GET /api/stats", s.handleStats)
 	mux.HandleFunc("GET /api/network/interfaces", s.handleNetworkInterfaces)
@@ -76,6 +77,7 @@ func (s *Server) Routes() http.Handler {
 	// Cameras REST
 	mux.HandleFunc("GET /api/cameras", s.handleListCameras)
 	mux.HandleFunc("POST /api/cameras", s.handleCreateCamera)
+	mux.HandleFunc("POST /api/cameras/test-all", s.handleTestAllCameras)
 	mux.HandleFunc("GET /api/cameras/{id}", s.handleGetCamera)
 	mux.HandleFunc("PUT /api/cameras/{id}", s.handleUpdateCamera)
 	mux.HandleFunc("DELETE /api/cameras/{id}", s.handleDeleteCamera)
@@ -85,6 +87,12 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("GET /api/cameras/{id}/diagnostics", s.handleGetCameraDiagnostics)
 	mux.HandleFunc("GET /api/cameras/{id}/snapshot", s.handleGetCameraSnapshot)
 	mux.HandleFunc("GET /api/cameras/{id}/live", s.handleLiveStream)
+
+	// Camera PTZ Controls
+	mux.HandleFunc("POST /api/cameras/{id}/ptz/move", s.handlePTZMove)
+	mux.HandleFunc("POST /api/cameras/{id}/ptz/stop", s.handlePTZStop)
+	mux.HandleFunc("GET /api/cameras/{id}/ptz/presets", s.handlePTZGetPresets)
+	mux.HandleFunc("POST /api/cameras/{id}/ptz/presets/{presetId}/goto", s.handlePTZGotoPreset)
 
 	// Discovery REST
 	mux.HandleFunc("POST /api/discovery", s.handleStartDiscovery)
@@ -104,6 +112,7 @@ func (s *Server) Routes() http.Handler {
 	// Groups REST
 	mux.HandleFunc("GET /api/groups", s.handleListGroups)
 	mux.HandleFunc("POST /api/groups", s.handleCreateGroup)
+	mux.HandleFunc("DELETE /api/groups/{id}", s.handleDeleteGroup)
 
 	// Streams REST
 	mux.HandleFunc("GET /api/streams", s.handleListStreams)
@@ -114,12 +123,35 @@ func (s *Server) Routes() http.Handler {
 	// Wrap middlewares
 	handler := Chain(mux,
 		RecoveryMiddleware,
+		TrailingSlashMiddleware,
 		LoggingMiddleware,
 		CORSMiddleware,
 		SecurityHeadersMiddleware,
 	)
 
 	return handler
+}
+
+// handleAPIIndex returns root API documentation and server summary.
+func (s *Server) handleAPIIndex(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"service":    "VideoCMS REST API",
+		"version":    s.version.Version,
+		"commit":     s.version.Commit,
+		"build_date": s.version.BuildDate,
+		"status":     "ok",
+		"endpoints": map[string]string{
+			"health":     "/api/health",
+			"stats":      "/api/stats",
+			"cameras":    "/api/cameras",
+			"discovery":  "/api/discovery",
+			"layouts":    "/api/layouts",
+			"groups":     "/api/groups",
+			"streams":    "/api/streams",
+			"events":     "/api/events",
+			"interfaces": "/api/network/interfaces",
+		},
+	})
 }
 
 // Health check
@@ -589,10 +621,121 @@ func (s *Server) handleCreateGroup(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, g)
 }
 
+// Test all cameras in batch
+func (s *Server) handleTestAllCameras(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	cameras, err := s.camService.ListCameras(ctx)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "DB_ERROR", err.Error())
+		return
+	}
+
+	type TestResult struct {
+		ID      string `json:"id"`
+		Name    string `json:"name"`
+		Host    string `json:"host"`
+		Success bool   `json:"success"`
+		Error   string `json:"error,omitempty"`
+	}
+
+	results := make([]TestResult, 0, len(cameras))
+	for _, cam := range cameras {
+		testErr := s.camService.TestCamera(ctx, cam.ID, "")
+		res := TestResult{
+			ID:      cam.ID,
+			Name:    cam.Name,
+			Host:    cam.Host,
+			Success: testErr == nil,
+		}
+		if testErr != nil {
+			res.Error = testErr.Error()
+		}
+		results = append(results, res)
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"total":   len(cameras),
+		"results": results,
+	})
+}
+
+// PTZ Move handler
+func (s *Server) handlePTZMove(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	var req struct {
+		Pan  float64 `json:"pan"`
+		Tilt float64 `json:"tilt"`
+		Zoom float64 `json:"zoom"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&req)
+
+	if err := s.camService.PTZMove(r.Context(), id, req.Pan, req.Tilt, req.Zoom); err != nil {
+		writeError(w, http.StatusBadRequest, "PTZ_FAILED", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "PTZ Move command sent",
+	})
+}
+
+// PTZ Stop handler
+func (s *Server) handlePTZStop(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if err := s.camService.PTZStop(r.Context(), id); err != nil {
+		writeError(w, http.StatusBadRequest, "PTZ_FAILED", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "PTZ Stop command sent",
+	})
+}
+
+// PTZ Get Presets handler
+func (s *Server) handlePTZGetPresets(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	presets, err := s.camService.PTZGetPresets(r.Context(), id)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "PTZ_FAILED", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, presets)
+}
+
+// PTZ Goto Preset handler
+func (s *Server) handlePTZGotoPreset(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	presetId := r.PathValue("presetId")
+
+	if err := s.camService.PTZGotoPreset(r.Context(), id, presetId); err != nil {
+		writeError(w, http.StatusBadRequest, "PTZ_FAILED", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": fmt.Sprintf("Moved to preset %s", presetId),
+	})
+}
+
+// Delete group
+func (s *Server) handleDeleteGroup(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if err := s.camRepo.DeleteGroup(r.Context(), id); err != nil {
+		writeError(w, http.StatusInternalServerError, "DB_ERROR", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"message": "Group deleted successfully"})
+}
+
 // Static SPA Handler
 func (s *Server) handleStaticSPA(w http.ResponseWriter, r *http.Request) {
-	if strings.HasPrefix(r.URL.Path, "/api/") {
-		writeError(w, http.StatusNotFound, "NOT_FOUND", "API endpoint not found")
+	if strings.HasPrefix(r.URL.Path, "/api") {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", fmt.Sprintf("API endpoint %s %s not found", r.Method, r.URL.Path))
 		return
 	}
 
