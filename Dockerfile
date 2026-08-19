@@ -1,7 +1,10 @@
+# Keep legacy Docker builds functional; BuildKit overrides this automatic arg.
+ARG BUILDPLATFORM=linux/amd64
+
 # ==========================================
 # Stage 1: Build Frontend (React + TypeScript)
 # ==========================================
-FROM node:20-alpine AS frontend-builder
+FROM --platform=$BUILDPLATFORM node:20-alpine AS frontend-builder
 WORKDIR /build/web
 
 # Copy package manifests for layer caching
@@ -13,9 +16,9 @@ COPY web/ ./
 RUN npm run build
 
 # ==========================================
-# Stage 2: Build Backend (Go Binary)
+# Stage 2: Build Backend (Go Cross-Compilation)
 # ==========================================
-FROM golang:alpine AS backend-builder
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS backend-builder
 WORKDIR /build
 
 ENV GOTOOLCHAIN=auto
@@ -36,9 +39,18 @@ COPY migrations/ migrations/
 ARG VERSION=1.0.0
 ARG COMMIT=docker
 ARG BUILD_DATE=""
-RUN CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags="-s -w -X main.Version=${VERSION} -X main.Commit=${COMMIT} -X main.BuildDate=${BUILD_DATE}" \
-    -o /bin/cms ./cmd/server
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
+ARG TARGETVARIANT=""
+
+RUN set -eux; \
+    if [ "${TARGETARCH}" = "arm" ]; then \
+        export GOARM="${TARGETVARIANT#v}"; \
+    fi; \
+    CGO_ENABLED=0 GOOS="${TARGETOS}" GOARCH="${TARGETARCH}" \
+        go build \
+        -ldflags="-s -w -X main.Version=${VERSION} -X main.Commit=${COMMIT} -X main.BuildDate=${BUILD_DATE}" \
+        -o /bin/cms ./cmd/server
 
 # ==========================================
 # Stage 3: Minimal, Secure Runtime Image

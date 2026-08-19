@@ -24,11 +24,21 @@ flowchart TD
     PushMain["Push em main / Pull Request"] --> TestJob["1. Job de Testes & Linter\n(go vet, go test -race, tsc, vite build)"]
     PushTag["Push de Tag (ex: v0.1.0)"] --> TestJob
     
-    TestJob -->|Sucesso| BuildxJob["2. Build Multi-Arch com Buildx\n(linux/amd64 e linux/arm64)"]
+    TestJob -->|Sucesso| BuildxJob["2. Build Multi-Arch com Buildx\n(amd64, arm64, arm/v7, arm/v6, 386, riscv64, ppc64le, s390x)"]
     BuildxJob --> Meta["3. Extração de Metadata & Tags SemVer\n(0.1.0, 0.1, 0, latest)"]
     Meta --> SecScan["4. Vulnerability Scan com Trivy\n(Análise de Segurança de SO e Deps)"]
     SecScan --> PushGHCR["5. Publicação no GHCR\n(ghcr.io/facrf/videocmsgemini:0.1.0)"]
 ```
+
+### Arquiteturas Suportadas (Multi-Arch):
+- **`linux/amd64`:** Servidores x86_64, desktops e ambientes cloud.
+- **`linux/arm64`:** ARM 64-bit (Raspberry Pi 4/5 64-bit, Apple Silicon, AWS Graviton, Rockchip, Jetson).
+- **`linux/arm/v7`:** ARM 32-bit v7 (Raspberry Pi 2/3/4 em SO 32-bit, Orange Pi, NVRs embarcados).
+- **`linux/arm/v6`:** ARM 32-bit v6 (Raspberry Pi Zero / 1).
+- **`linux/386`:** x86 32-bit legados.
+- **`linux/riscv64`:** RISC-V 64-bit (SBCs de nova geração).
+- **`linux/ppc64le`:** IBM POWER (Little Endian).
+- **`linux/s390x`:** IBM System z (Mainframes).
 
 ### Regras de Disparo:
 - **Pushes na branch `main`:** Validam os testes e geram a imagem com a tag `:main` (não gera `:latest` automaticamente para evitar releases acidentais).

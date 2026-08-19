@@ -15,6 +15,19 @@ O formato é baseado no [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [0.1.1] - 2026-08-19
+
+### Fixed
+- Corrigida a compilação cruzada da imagem Docker com builders executados na plataforma do runner.
+- Alinhada a versão do Go usada no Docker e no GitHub Actions com o `go.mod`.
+- Corrigida a referência de imagem usada pelo scanner Trivy após a publicação.
+
+### Changed
+- Publicação GHCR ampliada para `linux/amd64`, `linux/arm64`, `linux/arm/v7`, `linux/arm/v6`, `linux/386`, `linux/riscv64`, `linux/ppc64le` e `linux/s390x`.
+- Instalação das dependências do frontend no CI alterada para `npm ci`, usando o lockfile como chave de cache.
+
+---
+
 ## [0.1.0] - 2026-08-18
 
 ### Added
