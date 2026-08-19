@@ -91,6 +91,48 @@ docker compose down
 # ou: make docker-down
 ```
 
+#### Stack para Portainer (imagem do GitHub Container Registry)
+
+No Portainer, crie uma Stack e cole o YAML abaixo. A imagem publicada pelo
+GitHub Actions está no caminho `ghcr.io/facrf/videocmsgemini:latest`:
+
+```yaml
+version: "3.8"
+
+services:
+  cms:
+    image: ghcr.io/facrf/videocmsgemini:latest
+    container_name: videocms
+    restart: unless-stopped
+    ports:
+      - "15000:15000"
+    volumes:
+      - cms-data:/app/data
+    environment:
+      CMS_HOST: "0.0.0.0"
+      CMS_PORT: "15000"
+      CMS_DB_PATH: "/app/data/cms.db"
+      CMS_STATIC_DIR: "/app/web/dist"
+      CMS_SECRET_KEY: "${CMS_SECRET_KEY}"
+      CMS_ALLOWED_NETWORKS: "${CMS_ALLOWED_NETWORKS:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.0/8}"
+      CMS_LOG_LEVEL: "${CMS_LOG_LEVEL:-info}"
+    healthcheck:
+      test: ["CMD", "/app/cms", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  cms-data:
+    driver: local
+```
+
+Antes de implantar, cadastre `CMS_SECRET_KEY` nas variáveis de ambiente da
+Stack com uma chave aleatória forte de pelo menos 32 caracteres. Se o pacote
+no GHCR estiver privado, adicione `ghcr.io` em **Registries** no Portainer com
+um token do GitHub que tenha a permissão `read:packages`.
+
 ---
 
 ### 3.2 Execução Local (Bare Metal / VM)
