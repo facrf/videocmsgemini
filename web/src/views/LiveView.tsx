@@ -201,7 +201,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
   return (
     <div className="flex flex-col h-full bg-[#0a0a12] select-none overflow-hidden relative">
       {/* Live View Modern Control Toolbar */}
-      <div className="h-14 bg-slate-900 border-b border-slate-700/40 px-4 sm:px-6 flex items-center justify-between z-20 shadow-sm gap-2 flex-wrap sm:flex-nowrap">
+      <div className="min-h-[56px] py-2 bg-slate-900 border-b border-slate-700/40 px-4 sm:px-6 flex items-center justify-between z-20 shadow-sm gap-2 flex-wrap sm:flex-nowrap">
         {/* Left: Grid Size Selector */}
         <div className="flex items-center space-x-2">
           <div className="flex items-center space-x-1 bg-slate-800/50 p-1 rounded-lg border border-slate-700/40">

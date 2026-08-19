@@ -91,7 +91,7 @@ export const CameraTile: React.FC<CameraTileProps> = ({
       }`}
     >
       {/* Top Overlay Bar */}
-      <div className="absolute top-0 left-0 right-0 z-20 px-3.5 py-2.5 camera-tile-overlay flex items-center justify-between pointer-events-none">
+      <div className="absolute top-0 left-0 right-0 z-20 px-3.5 py-3 bg-gradient-to-b from-black/80 to-transparent flex items-center justify-between pointer-events-none">
         <div className="flex items-center space-x-2.5 pointer-events-auto min-w-0">
           {/* Glowing Status Dot */}
           <span
