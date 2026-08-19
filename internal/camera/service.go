@@ -311,7 +311,7 @@ func (s *Service) GetSnapshot(ctx context.Context, id string) ([]byte, string, e
 	if err != nil {
 		return nil, "", err
 	}
-	if cam.Username != "" && pass != "" {
+	if cam.Username != "" {
 		req.SetBasicAuth(cam.Username, pass)
 	}
 
@@ -469,4 +469,3 @@ func (s *Service) PTZGotoPreset(ctx context.Context, id, presetToken string) err
 	ptz := onvif.NewONVIFPTZ(onvifClient, caps.PTZXAddr)
 	return ptz.GotoPreset(ctx, profs[0].Token, presetToken)
 }
-

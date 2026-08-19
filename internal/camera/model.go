@@ -62,7 +62,8 @@ type Camera struct {
 	Username           string             `json:"username"`
 	EncryptedPassword  string             `json:"-"` // Never expose in JSON responses
 	HasPassword        bool               `json:"has_password"`
-	Password           string             `json:"password,omitempty"` // Only present during create/update requests
+	Password           string             `json:"password,omitempty"`       // Only present during create/update requests (optional)
+	ClearPassword      bool               `json:"clear_password,omitempty"` // Set to true to explicitly remove/clear the camera password
 	PreferredProfile   string             `json:"preferred_profile"`
 	PreferredTransport string             `json:"preferred_transport"` // "tcp" or "udp"
 	Codec              string             `json:"codec"`

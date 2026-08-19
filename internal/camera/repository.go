@@ -326,7 +326,11 @@ func (r *Repository) Update(ctx context.Context, cam *Camera) error {
 	cam.UpdatedAt = time.Now().UTC()
 
 	var encPass string
-	if cam.Password != "" {
+	if cam.ClearPassword {
+		encPass = ""
+		cam.EncryptedPassword = ""
+		cam.HasPassword = false
+	} else if cam.Password != "" {
 		encrypted, err := security.Encrypt(cam.Password, r.secretKey)
 		if err != nil {
 			return fmt.Errorf("failed to encrypt password: %w", err)

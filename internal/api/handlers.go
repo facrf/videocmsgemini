@@ -371,7 +371,8 @@ func (s *Server) handleCreateCamera(w http.ResponseWriter, r *http.Request) {
 
 // Get camera
 func (s *Server) handleGetCamera(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r); id := vars["id"]
+	vars := mux.Vars(r)
+	id := vars["id"]
 	cam, err := s.camService.GetCamera(r.Context(), id)
 	if errors.Is(err, camera.ErrCameraNotFound) {
 		writeError(w, http.StatusNotFound, "CAMERA_NOT_FOUND", "Camera not found")
@@ -588,7 +589,7 @@ func (s *Server) handleCancelDiscoveryJob(w http.ResponseWriter, r *http.Request
 
 func (s *Server) handleProbeDevice(w http.ResponseWriter, r *http.Request) {
 	jobID := mux.Vars(r)["id"]
-deviceID := mux.Vars(r)["deviceId"]
+	deviceID := mux.Vars(r)["deviceId"]
 
 	var req struct {
 		Username string `json:"username"`

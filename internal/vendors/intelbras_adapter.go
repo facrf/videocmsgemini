@@ -126,7 +126,7 @@ func (a *IntelbrasAdapter) TestConnection(ctx context.Context, cam *camera.Camer
 		return err
 	}
 
-	if cam.Username != "" && password != "" {
+	if cam.Username != "" {
 		req.SetBasicAuth(cam.Username, password)
 	}
 
@@ -137,7 +137,7 @@ func (a *IntelbrasAdapter) TestConnection(ctx context.Context, cam *camera.Camer
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return fmt.Errorf("authentication failed: HTTP 401")
+		return fmt.Errorf("authentication failed: HTTP 401 (password required or invalid)")
 	}
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("HTTP status %d", resp.StatusCode)

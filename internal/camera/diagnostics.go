@@ -160,10 +160,18 @@ func (d *DiagnosticsRunner) Run(ctx context.Context, cam *Camera, password strin
 		} else {
 			authPassed = true
 			devInfo = info
+			authDetails := "Anonymous access permitted (no credentials required)"
+			if cam.Username != "" {
+				if password == "" {
+					authDetails = fmt.Sprintf("Credentials validated for user %q (without password)", cam.Username)
+				} else {
+					authDetails = fmt.Sprintf("Credentials validated for user %q", cam.Username)
+				}
+			}
 			report.Stages = append(report.Stages, DiagnosticStage{
 				Name:       "Authentication",
 				Status:     "OK",
-				Details:    fmt.Sprintf("Credentials validated for user %q", cam.Username),
+				Details:    authDetails,
 				DurationMs: time.Since(start).Milliseconds(),
 			})
 		}
@@ -299,7 +307,7 @@ func (d *DiagnosticsRunner) Run(ctx context.Context, cam *Camera, password strin
 	if !snapshotOK && cam.SnapshotPath != "" {
 		snapURL := fmt.Sprintf("http://%s:%d%s", cam.Host, port, cam.SnapshotPath)
 		req, _ := http.NewRequestWithContext(ctx, "GET", snapURL, nil)
-		if cam.Username != "" && password != "" {
+		if cam.Username != "" {
 			req.SetBasicAuth(cam.Username, password)
 		}
 		resp, err := httpClient.Do(req)

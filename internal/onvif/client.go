@@ -82,7 +82,7 @@ func (c *Client) SendSOAP(ctx context.Context, endpoint, action, bodyPayload str
 	}
 
 	req.Header.Set("Content-Type", "application/soap+xml; charset=utf-8; action=\""+action+"\"")
-	if c.Username != "" && c.Password != "" {
+	if c.Username != "" {
 		req.SetBasicAuth(c.Username, c.Password)
 	}
 
@@ -293,7 +293,7 @@ func (c *Client) FetchSnapshot(ctx context.Context, snapshotURI string) ([]byte,
 		return nil, "", err
 	}
 
-	if c.Username != "" && c.Password != "" {
+	if c.Username != "" {
 		req.SetBasicAuth(c.Username, c.Password)
 	}
 

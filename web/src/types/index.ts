@@ -41,6 +41,7 @@ export interface Camera {
   username: string;
   has_password: boolean;
   password?: string;
+  clear_password?: boolean;
   preferred_profile: string;
   preferred_transport: string;
   codec: string;

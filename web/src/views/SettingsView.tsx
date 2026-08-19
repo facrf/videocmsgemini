@@ -89,10 +89,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ stats, sseConnected 
             <div className="p-5 bg-slate-900 rounded-xl border border-slate-700/40 space-y-3">
               <div className="flex items-center space-x-2 text-slate-200 font-medium">
                 <Lock className="w-4 h-4 text-emerald-500" />
-                <span>Criptografia de Senhas em Repouso</span>
+                <span>Criptografia e Uso Opcional de Senhas</span>
               </div>
               <p className="text-sm text-slate-400 leading-relaxed">
-                Todas as senhas de câmeras são criptografadas em repouso com algoritmo <strong>AES-256-GCM</strong> derivado da chave <code className="text-cyan-500 bg-slate-800 px-1.5 py-0.5 rounded font-mono text-xs">CMS_SECRET_KEY</code>. Nenhuma credencial trafega em texto puro em logs ou URLs persistidas.
+                O software permite operar câmeras totalmente sem senha (acesso anônimo ou senhas em branco) ou com credenciais. Quando informadas, as senhas são criptografadas em repouso com algoritmo <strong>AES-256-GCM</strong> derivado da chave <code className="text-cyan-500 bg-slate-800 px-1.5 py-0.5 rounded font-mono text-xs">CMS_SECRET_KEY</code>. Nenhuma credencial trafega em texto puro em logs ou URLs persistidas.
               </p>
             </div>
 

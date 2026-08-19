@@ -108,24 +108,25 @@ export const ProbeDeviceModal: React.FC<ProbeDeviceModalProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-slate-300 mb-1 flex items-center gap-1.5">
-                  <User className="w-4 h-4 text-blue-400" /> Usuário ONVIF
+                  <User className="w-4 h-4 text-blue-400" /> Usuário (Opcional)
                 </label>
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                  placeholder="admin (ou vazio)"
                   className="w-full bg-slate-800 border border-slate-700/40 rounded-lg px-3 py-2 text-sm text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 outline-none"
                 />
               </div>
               <div>
                 <label className="block text-sm text-slate-300 mb-1 flex items-center gap-1.5">
-                  <Lock className="w-4 h-4 text-blue-400" /> Senha
+                  <Lock className="w-4 h-4 text-blue-400" /> Senha (Opcional)
                 </label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="Vazio = sem senha"
                   className="w-full bg-slate-800 border border-slate-700/40 rounded-lg px-3 py-2 text-sm text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 outline-none"
                 />
               </div>

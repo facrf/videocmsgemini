@@ -392,3 +392,74 @@ func TestSetDefaultLayoutEndpoint(t *testing.T) {
 		t.Errorf("expected l1 is_default = false")
 	}
 }
+
+func TestPasswordlessCameraAPI(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	// 1. Create camera with no password
+	payload := map[string]interface{}{
+		"name":         "Passwordless Test Cam",
+		"host":         "127.0.0.1",
+		"port":         80,
+		"rtsp_port":    554,
+		"manufacturer": "Generic",
+		"username":     "",
+	}
+	bodyBytes, _ := json.Marshal(payload)
+	resp, err := http.Post(ts.URL+"/api/cameras", "application/json", bytes.NewReader(bodyBytes))
+	if err != nil {
+		t.Fatalf("POST /api/cameras failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d", resp.StatusCode)
+	}
+
+	var created camera.Camera
+	_ = json.NewDecoder(resp.Body).Decode(&created)
+	if created.HasPassword {
+		t.Errorf("expected has_password=false")
+	}
+
+	// 2. Update with password
+	up1 := map[string]interface{}{
+		"name":     "Cam With Password",
+		"host":     "127.0.0.1",
+		"password": "NewSecretPassword123",
+	}
+	up1Bytes, _ := json.Marshal(up1)
+	req1, _ := http.NewRequest("PUT", ts.URL+"/api/cameras/"+created.ID, bytes.NewReader(up1Bytes))
+	req1.Header.Set("Content-Type", "application/json")
+	resp1, err := http.DefaultClient.Do(req1)
+	if err != nil {
+		t.Fatalf("PUT /api/cameras failed: %v", err)
+	}
+	var afterAddPass camera.Camera
+	_ = json.NewDecoder(resp1.Body).Decode(&afterAddPass)
+	resp1.Body.Close()
+	if !afterAddPass.HasPassword {
+		t.Errorf("expected has_password=true after adding password")
+	}
+
+	// 3. Clear password via API using clear_password: true
+	up2 := map[string]interface{}{
+		"name":           "Cam Cleared Password",
+		"host":           "127.0.0.1",
+		"clear_password": true,
+	}
+	up2Bytes, _ := json.Marshal(up2)
+	req2, _ := http.NewRequest("PUT", ts.URL+"/api/cameras/"+created.ID, bytes.NewReader(up2Bytes))
+	req2.Header.Set("Content-Type", "application/json")
+	resp2, err := http.DefaultClient.Do(req2)
+	if err != nil {
+		t.Fatalf("PUT /api/cameras with clear_password failed: %v", err)
+	}
+	var afterClear camera.Camera
+	_ = json.NewDecoder(resp2.Body).Decode(&afterClear)
+	resp2.Body.Close()
+	if afterClear.HasPassword {
+		t.Errorf("expected has_password=false after clear_password=true")
+	}
+}

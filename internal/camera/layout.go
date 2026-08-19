@@ -299,4 +299,3 @@ func (r *Repository) DeleteGroup(ctx context.Context, id string) error {
 	_, err := r.db.ExecContext(ctx, "DELETE FROM groups WHERE id = ?", id)
 	return err
 }
-

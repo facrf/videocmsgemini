@@ -42,6 +42,7 @@ export const CameraModal: React.FC<CameraModalProps> = ({ camera, onClose, onSav
     enabled: camera ? camera.enabled : true,
   });
 
+  const [clearPassword, setClearPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string; caps?: CameraCapabilities } | null>(null);
@@ -68,7 +69,8 @@ export const CameraModal: React.FC<CameraModalProps> = ({ camera, onClose, onSav
 
     try {
       if (isEditing && camera) {
-        const res = await api.testCamera(camera.id, formData.password || undefined);
+        const testPass = clearPassword ? '' : (formData.password || undefined);
+        const res = await api.testCamera(camera.id, testPass);
         if (res.success) {
           const caps = await api.getCameraCapabilities(camera.id);
           setTestResult({
@@ -125,7 +127,9 @@ export const CameraModal: React.FC<CameraModalProps> = ({ camera, onClose, onSav
       groups: formData.groups ? formData.groups.split(',').map((g) => g.trim()).filter(Boolean) : [],
     };
 
-    if (formData.password) {
+    if (clearPassword) {
+      payload.clear_password = true;
+    } else if (formData.password) {
       payload.password = formData.password;
     }
 
@@ -309,27 +313,28 @@ export const CameraModal: React.FC<CameraModalProps> = ({ camera, onClose, onSav
               <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/40 space-y-1">
                 <div className="flex items-center space-x-2 text-emerald-400 text-sm font-medium">
                   <ShieldCheck className="w-5 h-5" />
-                  <span>Proteção de Credenciais com AES-256-GCM</span>
+                  <span>Uso Flexível de Credenciais (Senha Opcional)</span>
                 </div>
                 <p className="text-sm text-slate-400">
-                  A senha é criptografada e nunca exposta em logs, URLs RTSP salvas ou respostas JSON da API.
+                  Câmeras podem ser cadastradas e utilizadas sem senha. Se informada, a senha é criptografada com AES-256-GCM em repouso.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-slate-300 mb-1">Usuário ONVIF / RTSP</label>
+                  <label className="block text-sm text-slate-300 mb-1">Usuário ONVIF / RTSP (Opcional)</label>
                   <input
                     type="text"
                     name="username"
                     value={formData.username}
                     onChange={handleChange}
+                    placeholder="Deixe em branco se não houver"
                     className="w-full bg-slate-800 border border-slate-700/40 rounded-lg px-3 py-2 text-sm text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 outline-none"
                   />
                 </div>
                 <div>
                   <label className="block text-sm text-slate-300 mb-1">
-                    {isEditing ? 'Nova Senha (vazio mantém)' : 'Senha da Câmera'}
+                    {isEditing ? (clearPassword ? 'Senha (Removida)' : 'Nova Senha (vazio mantém)') : 'Senha da Câmera (Opcional)'}
                   </label>
                   <div className="relative">
                     <input
@@ -337,19 +342,41 @@ export const CameraModal: React.FC<CameraModalProps> = ({ camera, onClose, onSav
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
-                      placeholder={isEditing ? '••••••••' : 'Senha do dispositivo'}
-                      className="w-full bg-slate-800 border border-slate-700/40 rounded-lg px-3 py-2 text-sm text-slate-100 pr-10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 outline-none"
+                      disabled={clearPassword}
+                      placeholder={clearPassword ? 'Senha desativada / sem senha' : isEditing ? '•••••••• (ou deixe em branco)' : 'Opcional (em branco = sem senha)'}
+                      className="w-full bg-slate-800 border border-slate-700/40 rounded-lg px-3 py-2 text-sm text-slate-100 pr-10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 outline-none disabled:opacity-50"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300"
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
+                    {!clearPassword && (
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
+
+              {isEditing && (
+                <div className="flex items-center space-x-2 pt-1">
+                  <label className="flex items-center space-x-2 text-sm text-slate-300 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={clearPassword}
+                      onChange={(e) => {
+                        setClearPassword(e.target.checked);
+                        if (e.target.checked) {
+                          setFormData((prev) => ({ ...prev, password: '' }));
+                        }
+                      }}
+                      className="w-4 h-4 rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>Remover senha e usar esta câmera sem senha</span>
+                  </label>
+                </div>
+              )}
             </div>
           )}
 

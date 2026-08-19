@@ -867,6 +867,10 @@ components:
           type: string
         password:
           type: string
+          description: Senha de autenticação do dispositivo (opcional)
+        clear_password:
+          type: boolean
+          description: Se verdadeiro, remove a senha salva do dispositivo
         preferred_transport:
           type: string
           enum: [tcp, udp]
