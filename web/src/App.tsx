@@ -93,7 +93,7 @@ export function App() {
   const { connected: sseConnected } = useEvents(handleSSEEvent);
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#060911] text-slate-100 overflow-hidden select-none">
+    <div className="flex flex-col h-screen w-screen bg-[#0a0a12] text-slate-100 overflow-hidden select-none">
       {/* Top Header */}
       <Header
         stats={stats}
@@ -112,7 +112,7 @@ export function App() {
           discoveredCount={(recentJobs || []).find((j) => j && j.status === 'running')?.found_devices || 0}
         />
 
-        <main className="flex-1 bg-[#060911] overflow-hidden relative">
+        <main className="flex-1 bg-[#0a0a12] overflow-hidden relative">
           {activeTab === 'dashboard' && (
             <DashboardView
               stats={stats}
@@ -196,26 +196,26 @@ export function App() {
         />
       )}
 
-      {/* High-Tech Toast Notifications */}
-      <div className="fixed bottom-5 right-5 z-50 flex flex-col space-y-2.5 pointer-events-none">
+      {/* Toast Notifications */}
+      <div className="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none">
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`p-4 rounded-2xl shadow-2xl text-xs font-bold border pointer-events-auto backdrop-blur-xl transition-all duration-300 max-w-sm flex items-center justify-between space-x-3 animate-in slide-in-from-bottom-2 ${
+            className={`p-3.5 rounded-xl shadow-lg text-xs font-semibold border pointer-events-auto transition-all duration-200 max-w-sm flex items-center justify-between space-x-3 ${
               t.type === 'success'
-                ? 'bg-emerald-950/95 text-emerald-200 border-emerald-700/80 shadow-emerald-950/50'
+                ? 'bg-slate-900 text-emerald-300 border-emerald-500/30 shadow-emerald-950/20'
                 : t.type === 'error'
-                ? 'bg-rose-950/95 text-rose-200 border-rose-700/80 shadow-rose-950/50'
-                : 'bg-slate-900/95 text-cyan-200 border-slate-700/80 shadow-slate-950/50'
+                ? 'bg-slate-900 text-rose-300 border-rose-500/30 shadow-rose-950/20'
+                : 'bg-slate-900 text-cyan-300 border-cyan-500/30 shadow-cyan-950/20'
             }`}
           >
             <div className="flex items-center space-x-2.5">
               {t.type === 'success' ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               ) : t.type === 'error' ? (
-                <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />
+                <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
               ) : (
-                <Info className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+                <Info className="w-4 h-4 text-cyan-400 flex-shrink-0" />
               )}
               <span className="leading-snug">{t.message}</span>
             </div>

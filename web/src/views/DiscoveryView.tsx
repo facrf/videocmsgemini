@@ -102,43 +102,43 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
   const isButtonDisabled = Boolean(starting || (activeJob && activeJob.status === 'running'));
 
   return (
-    <div className="p-5 sm:p-7 space-y-6 h-full overflow-y-auto select-none bg-[#060911]">
+    <div className="p-5 sm:p-7 space-y-6 h-full overflow-y-auto select-none bg-[#0a0a12] text-slate-100">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-3 mb-1">
-            <div className="p-2 rounded-2xl bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 shadow-inner">
+            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500 border border-slate-700/40">
               <Compass className="w-5 h-5" />
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight font-mono">
+            <h2 className="text-xl sm:text-2xl font-semibold text-slate-100 tracking-tight">
               Descoberta de Câmeras na Rede Local
             </h2>
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-sm text-slate-400">
             Localização automática via multicast WS-Discovery (ONVIF) e varredura de portas controlada por CIDR
           </p>
         </div>
       </div>
 
       {/* Discovery Trigger Card */}
-      <div className="bg-[#0a0f1d]/90 border border-slate-800/90 rounded-3xl p-6 shadow-2xl space-y-5">
+      <div className="bg-slate-800/50 border border-slate-700/40 rounded-xl p-6 shadow-sm space-y-5">
         <form onSubmit={handleStartScan} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Network Interface */}
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center gap-1.5 font-mono">
-                <Network className="w-3.5 h-3.5 text-blue-400" /> Interface de Rede
+              <label className="block text-sm font-medium text-slate-100 mb-1.5 flex items-center gap-1.5">
+                <Network className="w-4 h-4 text-slate-400" /> Interface de Rede
               </label>
               <select
                 value={selectedIface}
                 onChange={(e) => handleSelectInterface(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white focus:outline-none focus:border-blue-500 transition shadow-inner font-mono font-bold"
+                className="w-full px-4 py-3 bg-slate-900 border border-slate-700/40 rounded-lg text-sm text-slate-100 focus:outline-none focus:border-blue-500 transition-colors shadow-sm"
               >
                 {interfaces.length === 0 ? (
                   <option value="">Nenhuma interface detectada</option>
                 ) : (
                   interfaces.map((i) => (
-                    <option key={i.name} value={i.name} className="bg-slate-900">
+                    <option key={i.name} value={i.name}>
                       {i.name} ({(i.ips || []).join(', ') || 'sem IP'})
                     </option>
                   ))
@@ -148,15 +148,15 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
 
             {/* Subnet CIDR */}
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center gap-1.5 font-mono">
-                <Radio className="w-3.5 h-3.5 text-cyan-400" /> Sub-rede / CIDR Alvo
+              <label className="block text-sm font-medium text-slate-100 mb-1.5 flex items-center gap-1.5">
+                <Radio className="w-4 h-4 text-slate-400" /> Sub-rede / CIDR Alvo
               </label>
               <input
                 type="text"
                 value={cidr}
                 onChange={(e) => setCidr(e.target.value)}
                 placeholder="Ex: 192.168.1.0/24"
-                className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-mono text-white focus:outline-none focus:border-cyan-500 transition shadow-inner font-bold"
+                className="w-full px-4 py-3 bg-slate-900 border border-slate-700/40 rounded-lg text-sm font-mono text-slate-100 focus:outline-none focus:border-blue-500 transition-colors shadow-sm"
                 required
               />
             </div>
@@ -166,7 +166,7 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
               <button
                 type="submit"
                 disabled={isButtonDisabled}
-                className="w-full py-3 px-5 bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all duration-200 shadow-lg shadow-cyan-600/25 hover:scale-105 disabled:opacity-50"
+                className="w-full py-3 px-5 bg-blue-600 hover:bg-blue-500 text-slate-100 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {starting ? (
                   <>
@@ -185,8 +185,8 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
         </form>
 
         {/* Security Alert */}
-        <div className="p-4 bg-slate-950/80 border border-slate-800/80 rounded-2xl flex items-center space-x-3 text-xs text-slate-400 shadow-inner font-mono">
-          <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+        <div className="p-4 bg-slate-900 border border-slate-700/40 rounded-lg flex items-center space-x-3 text-sm text-slate-400 shadow-sm">
+          <ShieldCheck className="w-5 h-5 text-emerald-500 flex-shrink-0" />
           <span className="leading-relaxed">
             Varredura segura RFC 1918. Portas testadas: 80, 554, 8000, 8080, 8899, 37777 (Dahua, Intelbras, Hikvision, Genéricas).
           </span>
@@ -195,28 +195,28 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
 
       {/* Active / Selected Discovery Job Details */}
       {activeJob && (
-        <div className="bg-[#0a0f1d]/90 border border-slate-800/90 rounded-3xl p-6 shadow-2xl space-y-6">
+        <div className="bg-slate-800/50 border border-slate-700/40 rounded-xl p-6 shadow-sm space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 rounded-2xl bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-inner flex-shrink-0">
+              <div className="w-12 h-12 rounded-lg bg-blue-500/10 border border-slate-700/40 flex items-center justify-center text-blue-500 shadow-sm flex-shrink-0">
                 <Search className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-sm font-black text-white flex items-center gap-2.5 font-mono">
-                  Varredura: {activeJob.cidr || 'WS-Discovery'}
+                <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
+                  Varredura: <span className="font-mono">{activeJob.cidr || 'WS-Discovery'}</span>
                   <span
-                    className={`text-[10px] px-3 py-0.5 rounded-full font-mono font-black border ${
+                    className={`text-[11px] px-2.5 py-0.5 rounded-full font-medium border ${
                       activeJob.status === 'completed'
-                        ? 'bg-emerald-950 text-emerald-300 border-emerald-800/80 shadow-sm'
+                        ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                         : activeJob.status === 'running'
-                        ? 'bg-cyan-950 text-cyan-300 border-cyan-800/80 animate-pulse'
-                        : 'bg-slate-900 text-slate-400 border-slate-800'
+                        ? 'bg-blue-500/10 text-blue-500 border-blue-500/20 animate-pulse'
+                        : 'bg-slate-800 text-slate-400 border-slate-700/40'
                     }`}
                   >
                     {activeJob.status.toUpperCase()}
                   </span>
                 </h3>
-                <p className="text-xs text-slate-400 font-mono mt-0.5">
+                <p className="text-sm text-slate-400 mt-1">
                   {activeJob.scanned_hosts} de {activeJob.total_hosts} IPs verificados • {activeJob.found_devices} dispositivos detectados
                 </p>
               </div>
@@ -225,7 +225,7 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
             {activeJob.status === 'running' && (
               <button
                 onClick={() => handleCancelScan(activeJob.id)}
-                className="px-4 py-2 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition shadow-sm hover:scale-105"
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-rose-500 border border-slate-700/40 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm"
               >
                 <StopCircle className="w-4 h-4" /> Cancelar
               </button>
@@ -234,15 +234,15 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
 
           {/* Progress Bar & Radar */}
           {activeJob.status === 'running' && (
-            <div className="space-y-2 bg-slate-950 p-4 rounded-2xl border border-slate-800 shadow-inner">
-              <div className="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-slate-800">
+            <div className="space-y-2 bg-slate-900 p-4 rounded-lg border border-slate-700/40 shadow-sm">
+              <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 h-2.5 rounded-full transition-all duration-300 shadow-[0_0_12px_rgba(6,182,212,1)]"
+                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${activeJob.progress}%` }}
                 />
               </div>
-              <div className="flex justify-between text-[11px] text-slate-400 font-mono">
-                <span className="font-bold text-cyan-400">Progresso: {activeJob.progress}%</span>
+              <div className="flex justify-between text-xs text-slate-400">
+                <span className="font-medium text-blue-500">Progresso: {activeJob.progress}%</span>
                 <span>Varrendo portas ONVIF / RTSP em paralelo...</span>
               </div>
             </div>
@@ -250,13 +250,13 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
 
           {/* Discovered Devices Cards */}
           <div>
-            <h4 className="text-xs font-black text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2 font-mono">
-              <Layers className="w-4 h-4 text-cyan-400" />
+            <h4 className="text-sm font-semibold text-slate-100 mb-4 flex items-center gap-2">
+              <Layers className="w-4 h-4 text-slate-400" />
               Dispositivos Encontrados ({activeJob.results?.length || 0})
             </h4>
 
             {!activeJob.results || activeJob.results.length === 0 ? (
-              <div className="py-12 text-center text-slate-500 text-xs bg-slate-950/60 rounded-2xl border border-slate-800/80 p-6">
+              <div className="py-12 text-center text-slate-500 text-sm bg-slate-900 rounded-lg border border-slate-700/40 p-6 shadow-sm">
                 Nenhum dispositivo detectado nesta varredura até o momento.
               </div>
             ) : (
@@ -264,32 +264,32 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
                 {(activeJob.results || []).map((dev) => (
                   <div
                     key={dev.id}
-                    className="p-5 rounded-2xl bg-slate-950 border border-slate-800/90 hover:border-cyan-500/60 transition flex flex-col justify-between space-y-4 shadow-xl"
+                    className="p-5 rounded-xl bg-slate-900 border border-slate-700/40 flex flex-col justify-between space-y-4 shadow-sm"
                   >
                     <div className="flex items-start justify-between">
-                      <div className="space-y-1">
+                      <div className="space-y-1.5">
                         <div className="flex items-center space-x-2">
-                          <span className="text-sm font-black font-mono text-white tracking-wide">{dev.ip}</span>
-                          <span className="text-[10px] font-mono text-slate-400 font-bold">Porta: {dev.port}</span>
-                          <span className="text-[9px] font-mono font-black px-2 py-0.5 rounded-md bg-slate-900 text-cyan-400 border border-slate-800">
-                            {dev.discovered_via === 'ws_discovery' ? 'WS-DISCOVERY' : 'SCAN'}
+                          <span className="text-base font-medium font-mono text-slate-100">{dev.ip}</span>
+                          <span className="text-xs font-mono text-slate-400">Porta: {dev.port}</span>
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700/40">
+                            {dev.discovered_via === 'ws_discovery' ? 'WS-DISC' : 'SCAN'}
                           </span>
                         </div>
-                        <div className="text-xs font-bold text-slate-200">
+                        <div className="text-sm text-slate-300">
                           {dev.manufacturer || 'Fabricante Desconhecido'} {dev.model ? `• ${dev.model}` : ''}
                         </div>
                         {dev.mac_address && (
-                          <div className="text-[10px] font-mono text-slate-500">MAC: {dev.mac_address}</div>
+                          <div className="text-xs font-mono text-slate-500">MAC: {dev.mac_address}</div>
                         )}
                       </div>
 
                       <span
-                        className={`text-[10px] font-mono font-black px-2.5 py-1 rounded-full border shadow-sm ${
+                        className={`text-[10px] font-medium px-2.5 py-1 rounded-full border shadow-sm ${
                           dev.probe_status === 'probed'
-                            ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                            ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                             : dev.probe_status === 'auth_required'
-                            ? 'bg-amber-950 text-amber-300 border-amber-800'
-                            : 'bg-slate-900 text-slate-400 border-slate-800'
+                            ? 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                            : 'bg-slate-800 text-slate-400 border-slate-700/40'
                         }`}
                       >
                         {dev.probe_status.toUpperCase()}
@@ -297,17 +297,17 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-900">
+                    <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-700/40">
                       <button
                         onClick={() => setSelectedDeviceForProbe({ job: activeJob, device: dev })}
-                        className="px-3.5 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl border border-slate-800 transition flex items-center gap-1.5 shadow-sm"
+                        className="px-4 py-2 text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg border border-slate-700/40 transition-colors flex items-center gap-2 shadow-sm"
                       >
-                        <Search className="w-3.5 h-3.5 text-cyan-400" />
+                        <Search className="w-4 h-4 text-slate-400" />
                         Sondar / Credenciais
                       </button>
                       <button
                         onClick={() => setSelectedDeviceForProbe({ job: activeJob, device: dev })}
-                        className="px-4 py-2 text-xs font-black bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl transition flex items-center gap-1.5 shadow-md shadow-blue-600/20"
+                        className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-500 text-slate-100 rounded-lg transition-colors flex items-center gap-2 shadow-sm"
                       >
                         <Plus className="w-4 h-4" />
                         Cadastrar no CMS
@@ -322,47 +322,47 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
       )}
 
       {/* History of Past Jobs */}
-      <div className="bg-[#0a0f1d]/90 border border-slate-800/90 rounded-3xl p-6 shadow-2xl space-y-4">
-        <h3 className="text-sm font-black text-white flex items-center gap-2 font-mono uppercase tracking-wider">
-          <Clock className="w-4 h-4 text-cyan-400" /> Histórico de Varreduras
+      <div className="bg-slate-800/50 border border-slate-700/40 rounded-xl p-6 shadow-sm space-y-4">
+        <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+          <Clock className="w-4 h-4 text-slate-400" /> Histórico de Varreduras
         </h3>
 
         {safeJobs.length === 0 ? (
-          <div className="py-10 text-center text-slate-500 text-xs">
+          <div className="py-8 text-center text-slate-500 text-sm">
             Nenhuma varredura anterior registrada.
           </div>
         ) : (
-          <div className="divide-y divide-slate-800/60">
+          <div className="divide-y divide-slate-700/40">
             {safeJobs.map((j) => (
               <div
                 key={j.id}
                 onClick={() => {
                   api.getDiscoveryJob(j.id).then((res) => { if (res) setActiveJob(res); });
                 }}
-                className={`py-3.5 px-4 rounded-2xl flex items-center justify-between text-xs cursor-pointer hover:bg-slate-900/60 transition-all ${
-                  activeJob?.id === j.id ? 'bg-slate-900 border border-slate-700/80 shadow-md' : ''
+                className={`py-4 px-4 rounded-lg flex items-center justify-between cursor-pointer hover:bg-slate-800/80 transition-colors ${
+                  activeJob?.id === j.id ? 'bg-slate-800 border-l-2 border-l-blue-500' : ''
                 }`}
               >
-                <div className="flex items-center space-x-3">
-                  <span className="font-mono font-black text-slate-200">{j.cidr || 'WS-Discovery'}</span>
-                  <span className="text-[11px] text-slate-500 font-mono">
+                <div className="flex items-center space-x-4">
+                  <span className="font-mono text-sm font-medium text-slate-200">{j.cidr || 'WS-Discovery'}</span>
+                  <span className="text-xs text-slate-500">
                     {new Date(j.created_at).toLocaleString('pt-BR')}
                   </span>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <span className="text-[11px] text-slate-400 font-mono font-bold">{j.found_devices} detectados</span>
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-slate-400">{j.found_devices} detectados</span>
                   <span
-                    className={`text-[10px] font-mono font-black px-2.5 py-0.5 rounded-full border ${
+                    className={`text-[10px] font-medium px-2.5 py-0.5 rounded-full border ${
                       j.status === 'completed'
-                        ? 'bg-emerald-950 text-emerald-400 border-emerald-800'
+                        ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                         : j.status === 'running'
-                        ? 'bg-blue-950 text-blue-400 border-blue-800'
-                        : 'bg-slate-900 text-slate-400 border-slate-800'
+                        ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                        : 'bg-slate-800 text-slate-400 border-slate-700/40'
                     }`}
                   >
                     {j.status}
                   </span>
-                  <ChevronRight className="w-4 h-4 text-slate-600" />
+                  <ChevronRight className="w-4 h-4 text-slate-500" />
                 </div>
               </div>
             ))}

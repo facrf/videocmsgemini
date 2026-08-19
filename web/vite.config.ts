@@ -12,7 +12,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:15000',
+        target: `http://localhost:${process.env.CMS_PORT || 15000}`,
         changeOrigin: true,
       },
     },

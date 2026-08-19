@@ -72,17 +72,17 @@ export const PTZController: React.FC<PTZControllerProps> = ({ camera, onClose })
   };
 
   return (
-    <div className="bg-slate-950/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-4 shadow-2xl space-y-4 select-none w-64 text-xs font-mono">
+    <div className="bg-slate-900 border border-slate-700/60 rounded-xl p-3.5 shadow-xl space-y-3 select-none w-60 text-xs">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-          <span className="font-bold text-white uppercase tracking-wider text-[11px]">Controle PTZ</span>
+          <span className="font-semibold text-white uppercase tracking-wider text-[11px]">Controle PTZ</span>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white text-xs px-1.5 py-0.5 rounded bg-slate-900 hover:bg-slate-800 transition"
+            className="text-slate-400 hover:text-white text-xs px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 transition"
           >
             ✕
           </button>
@@ -97,10 +97,10 @@ export const PTZController: React.FC<PTZControllerProps> = ({ camera, onClose })
           onMouseUp={handleStop}
           onTouchStart={() => handleMove(0, 1, 0, 'Cima')}
           onTouchEnd={handleStop}
-          className={`p-2.5 rounded-xl bg-slate-900 border transition-all ${
+          className={`p-2 rounded-lg border transition-colors ${
             activeDirection === 'Cima'
-              ? 'bg-blue-600 text-white border-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.8)]'
-              : 'border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white'
+              ? 'bg-blue-600 text-white border-blue-500'
+              : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white'
           }`}
           title="Inclinar para Cima"
         >
@@ -108,16 +108,16 @@ export const PTZController: React.FC<PTZControllerProps> = ({ camera, onClose })
         </button>
 
         {/* Middle Row: Left, Stop, Right */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             onMouseDown={() => handleMove(-1, 0, 0, 'Esquerda')}
             onMouseUp={handleStop}
             onTouchStart={() => handleMove(-1, 0, 0, 'Esquerda')}
             onTouchEnd={handleStop}
-            className={`p-2.5 rounded-xl bg-slate-900 border transition-all ${
+            className={`p-2 rounded-lg border transition-colors ${
               activeDirection === 'Esquerda'
-                ? 'bg-blue-600 text-white border-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.8)]'
-                : 'border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white'
+                ? 'bg-blue-600 text-white border-blue-500'
+                : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white'
             }`}
             title="Girar para Esquerda"
           >
@@ -126,7 +126,7 @@ export const PTZController: React.FC<PTZControllerProps> = ({ camera, onClose })
 
           <button
             onClick={handleStop}
-            className="p-2.5 rounded-xl bg-rose-950/80 border border-rose-800/80 text-rose-300 hover:bg-rose-900 transition shadow-inner"
+            className="p-2 rounded-lg bg-rose-600/20 border border-rose-500/40 text-rose-300 hover:bg-rose-600/30 transition-colors"
             title="Parar Movimento"
           >
             <Square className="w-5 h-5 fill-rose-400 text-rose-400" />
@@ -137,10 +137,10 @@ export const PTZController: React.FC<PTZControllerProps> = ({ camera, onClose })
             onMouseUp={handleStop}
             onTouchStart={() => handleMove(1, 0, 0, 'Direita')}
             onTouchEnd={handleStop}
-            className={`p-2.5 rounded-xl bg-slate-900 border transition-all ${
+            className={`p-2 rounded-lg border transition-colors ${
               activeDirection === 'Direita'
-                ? 'bg-blue-600 text-white border-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.8)]'
-                : 'border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white'
+                ? 'bg-blue-600 text-white border-blue-500'
+                : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white'
             }`}
             title="Girar para Direita"
           >
@@ -154,10 +154,10 @@ export const PTZController: React.FC<PTZControllerProps> = ({ camera, onClose })
           onMouseUp={handleStop}
           onTouchStart={() => handleMove(0, -1, 0, 'Baixo')}
           onTouchEnd={handleStop}
-          className={`p-2.5 rounded-xl bg-slate-900 border transition-all ${
+          className={`p-2 rounded-lg border transition-colors ${
             activeDirection === 'Baixo'
-              ? 'bg-blue-600 text-white border-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.8)]'
-              : 'border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white'
+              ? 'bg-blue-600 text-white border-blue-500'
+              : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white'
           }`}
           title="Inclinar para Baixo"
         >
@@ -166,13 +166,13 @@ export const PTZController: React.FC<PTZControllerProps> = ({ camera, onClose })
       </div>
 
       {/* Zoom Controls */}
-      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
+      <div className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-slate-800">
         <button
           onMouseDown={() => handleMove(0, 0, 1, 'Zoom+')}
           onMouseUp={handleStop}
           onTouchStart={() => handleMove(0, 0, 1, 'Zoom+')}
           onTouchEnd={handleStop}
-          className="flex-1 py-1.5 px-2.5 bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-800 rounded-xl flex items-center justify-center gap-1.5 transition text-xs font-bold"
+          className="flex-1 py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700/60 rounded-lg flex items-center justify-center gap-1.5 transition text-xs font-medium"
         >
           <ZoomIn className="w-4 h-4 text-cyan-400" /> Zoom +
         </button>
@@ -181,17 +181,17 @@ export const PTZController: React.FC<PTZControllerProps> = ({ camera, onClose })
           onMouseUp={handleStop}
           onTouchStart={() => handleMove(0, 0, -1, 'Zoom-')}
           onTouchEnd={handleStop}
-          className="flex-1 py-1.5 px-2.5 bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-800 rounded-xl flex items-center justify-center gap-1.5 transition text-xs font-bold"
+          className="flex-1 py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700/60 rounded-lg flex items-center justify-center gap-1.5 transition text-xs font-medium"
         >
           <ZoomOut className="w-4 h-4 text-cyan-400" /> Zoom -
         </button>
       </div>
 
       {/* Speed Slider */}
-      <div className="space-y-1 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
+      <div className="space-y-1 bg-slate-800/40 p-2 rounded-lg border border-slate-700/40">
         <div className="flex items-center justify-between text-[10px] text-slate-400">
           <span className="flex items-center gap-1"><Sliders className="w-3 h-3 text-blue-400" /> Velocidade</span>
-          <span className="font-bold text-white">{Math.round(speed * 100)}%</span>
+          <span className="font-semibold text-white font-mono">{Math.round(speed * 100)}%</span>
         </div>
         <input
           type="range"
@@ -200,21 +200,21 @@ export const PTZController: React.FC<PTZControllerProps> = ({ camera, onClose })
           step="0.1"
           value={speed}
           onChange={(e) => setSpeed(Number(e.target.value))}
-          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+          className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
         />
       </div>
 
       {/* Presets Navigation */}
       {presets.length > 0 && (
-        <div className="space-y-1.5 pt-2 border-t border-slate-800/80">
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+        <div className="space-y-1.5 pt-1.5 border-t border-slate-800">
+          <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
             <Bookmark className="w-3 h-3 text-amber-400" /> Presets Salvos
           </label>
           <div className="flex items-center gap-1.5">
             <select
               value={selectedPreset}
               onChange={(e) => setSelectedPreset(e.target.value)}
-              className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500"
+              className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-blue-500"
             >
               {presets.map((p) => (
                 <option key={p.token} value={p.token}>
@@ -224,7 +224,7 @@ export const PTZController: React.FC<PTZControllerProps> = ({ camera, onClose })
             </select>
             <button
               onClick={handleGotoPreset}
-              className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition shadow-md"
+              className="p-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition"
               title="Ir para Preset"
             >
               <Send className="w-3.5 h-3.5" />
@@ -235,7 +235,7 @@ export const PTZController: React.FC<PTZControllerProps> = ({ camera, onClose })
 
       {/* Status Bar */}
       {statusMsg && (
-        <div className="text-[10px] text-center text-slate-400 bg-slate-900/90 py-1 px-2 rounded-lg border border-slate-800 truncate">
+        <div className="text-[10px] text-center text-slate-400 bg-slate-800/80 py-1 px-2 rounded border border-slate-700/50 truncate">
           {statusMsg}
         </div>
       )}

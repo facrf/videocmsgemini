@@ -52,12 +52,12 @@ export const CameraTile: React.FC<CameraTileProps> = ({
     return (
       <div
         onClick={onAssignCamera}
-        className="h-full w-full bg-slate-950/40 hover:bg-slate-900/80 border-2 border-dashed border-slate-800/80 hover:border-blue-500/60 rounded-2xl flex flex-col items-center justify-center p-4 text-slate-500 hover:text-blue-400 cursor-pointer transition-all duration-300 group select-none min-h-[140px] shadow-inner relative overflow-hidden"
+        className="h-full w-full bg-slate-800/50 hover:bg-slate-800 border-2 border-dashed border-slate-700/40 hover:border-blue-500/60 rounded-xl flex flex-col items-center justify-center p-4 text-slate-400 hover:text-blue-400 cursor-pointer transition-all duration-300 group select-none min-h-[140px] relative overflow-hidden"
       >
-        <div className="w-12 h-12 rounded-2xl bg-slate-900/90 group-hover:bg-blue-600/20 group-hover:scale-110 border border-slate-700/80 group-hover:border-blue-500/50 flex items-center justify-center mb-3 transition-all duration-300 text-slate-400 group-hover:text-blue-400 shadow-lg">
+        <div className="w-12 h-12 rounded-xl bg-slate-900 group-hover:bg-blue-600/20 group-hover:scale-110 border border-slate-700/40 group-hover:border-blue-500/50 flex items-center justify-center mb-3 transition-all duration-300 text-slate-400 group-hover:text-blue-400 shadow-sm">
           <Plus className="w-6 h-6" />
         </div>
-        <span className="text-xs font-black text-slate-300 group-hover:text-blue-300 font-mono tracking-wider uppercase">
+        <span className="text-xs font-bold text-slate-300 group-hover:text-blue-300 uppercase">
           CANAL #{position + 1}
         </span>
         <span className="text-[11px] text-slate-500 group-hover:text-slate-400 mt-0.5">
@@ -84,10 +84,10 @@ export const CameraTile: React.FC<CameraTileProps> = ({
 
   return (
     <div
-      className={`relative h-full w-full bg-black rounded-2xl overflow-hidden border transition-all duration-300 flex flex-col group shadow-xl ${
+      className={`relative h-full w-full bg-slate-900 rounded-xl overflow-hidden border transition-all duration-300 flex flex-col group shadow-sm ${
         isMaximized
-          ? 'border-blue-500 ring-2 ring-blue-500/40 shadow-blue-500/10'
-          : 'border-slate-800/90 hover:border-slate-700/90'
+          ? 'border-blue-500 ring-2 ring-blue-500/40'
+          : 'border-slate-700/40 hover:border-slate-600/40'
       }`}
     >
       {/* Top Overlay Bar */}
@@ -95,19 +95,19 @@ export const CameraTile: React.FC<CameraTileProps> = ({
         <div className="flex items-center space-x-2.5 pointer-events-auto min-w-0">
           {/* Glowing Status Dot */}
           <span
-            className={`w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm ${
+            className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
               camera.status === 'online'
-                ? 'bg-emerald-400 animate-pulse-online ring-2 ring-emerald-950/80 shadow-[0_0_8px_rgba(16,185,129,0.8)]'
+                ? 'bg-emerald-500 animate-pulse-online'
                 : camera.status === 'auth_required'
-                ? 'bg-amber-400 ring-2 ring-amber-950 shadow-[0_0_8px_rgba(245,158,11,0.8)]'
-                : 'bg-rose-500 ring-2 ring-rose-950 shadow-[0_0_8px_rgba(239,68,68,0.8)]'
+                ? 'bg-amber-500'
+                : 'bg-rose-500'
             }`}
             title={`Status: ${camera.status}`}
           />
-          <span className="text-xs font-black text-white truncate drop-shadow-md tracking-tight font-mono">
+          <span className="text-xs font-bold text-slate-100 truncate tracking-tight">
             {camera.name}
           </span>
-          <span className="text-[10px] font-mono text-slate-300/90 hidden sm:inline-block drop-shadow-md bg-black/60 backdrop-blur-xs px-2 py-0.5 rounded-md border border-white/10">
+          <span className="text-[10px] font-mono text-slate-300 hidden sm:inline-block bg-black/60 px-2 py-0.5 rounded-md">
             {camera.host}
           </span>
         </div>
@@ -116,7 +116,7 @@ export const CameraTile: React.FC<CameraTileProps> = ({
         <div className="flex items-center space-x-1.5 pointer-events-auto flex-shrink-0">
           {isH265 && (
             <span
-              className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-purple-950/90 text-purple-300 border border-purple-800/70 shadow-sm"
+              className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700/40"
               title="Codec H.265 detectado"
             >
               H.265
@@ -125,10 +125,10 @@ export const CameraTile: React.FC<CameraTileProps> = ({
           {hasPTZ && (
             <button
               onClick={() => setShowPTZ(!showPTZ)}
-              className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-md border shadow-sm transition flex items-center gap-1 ${
+              className={`text-[9px] font-bold px-2 py-0.5 rounded-full border transition flex items-center gap-1 ${
                 showPTZ
-                  ? 'bg-cyan-600 text-white border-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.6)]'
-                  : 'bg-cyan-950/80 text-cyan-300 border-cyan-800/60 hover:bg-cyan-900/80'
+                  ? 'bg-cyan-600 text-white border-cyan-500'
+                  : 'bg-slate-800 text-cyan-400 border-slate-700/40 hover:bg-slate-700'
               }`}
               title="Abrir Controles PTZ"
             >
@@ -137,10 +137,10 @@ export const CameraTile: React.FC<CameraTileProps> = ({
           )}
           <button
             onClick={() => setSelectedProfile(selectedProfile === 'main' ? 'sub' : 'main')}
-            className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-md border shadow-sm transition ${
+            className={`text-[9px] font-bold px-2 py-0.5 rounded-full border transition ${
               profile === 'main'
-                ? 'bg-blue-600/90 text-white border-blue-400 shadow-sm'
-                : 'bg-slate-900/90 text-slate-300 border-slate-700/80 hover:bg-slate-800'
+                ? 'bg-blue-600 text-white border-blue-500'
+                : 'bg-slate-800 text-slate-300 border-slate-700/40 hover:bg-slate-700'
             }`}
             title="Alternar Main Stream / Sub Stream"
           >
@@ -153,24 +153,24 @@ export const CameraTile: React.FC<CameraTileProps> = ({
       <div className="flex-1 relative flex items-center justify-center bg-black overflow-hidden select-none">
         {streamError ? (
           <div className="flex flex-col items-center justify-center p-4 text-center z-10">
-            <div className="w-12 h-12 rounded-2xl bg-rose-950/60 border border-rose-800/80 flex items-center justify-center mb-3 shadow-lg">
-              <WifiOff className="w-6 h-6 text-rose-400" />
+            <div className="w-12 h-12 rounded-xl bg-rose-600/20 border border-rose-500/30 flex items-center justify-center mb-3">
+              <WifiOff className="w-6 h-6 text-rose-500" />
             </div>
-            <span className="text-xs font-extrabold text-slate-200">Falha na Conexão</span>
+            <span className="text-xs font-bold text-slate-100">Falha na Conexão</span>
             <span className="text-[10px] text-slate-400 font-mono mb-3 max-w-[220px] truncate">
               {camera.status_message || 'Stream offline ou host inacessível'}
             </span>
             <div className="flex items-center space-x-2">
               <button
                 onClick={reloadStream}
-                className="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-slate-700 flex items-center gap-1.5 transition shadow-sm font-semibold"
+                className="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg border border-slate-700/40 flex items-center gap-1.5 transition"
               >
                 <RefreshCw className="w-3.5 h-3.5" /> Reconectar
               </button>
               {onOpenDiagnostics && (
                 <button
                   onClick={() => onOpenDiagnostics(camera)}
-                  className="px-3 py-1.5 text-xs bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-xl border border-blue-500/40 transition font-semibold"
+                  className="px-3 py-1.5 text-xs bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg border border-blue-500/40 transition"
                 >
                   Diagnóstico
                 </button>
@@ -179,15 +179,15 @@ export const CameraTile: React.FC<CameraTileProps> = ({
           </div>
         ) : camera.status === 'auth_required' ? (
           <div className="flex flex-col items-center justify-center p-4 text-center z-10">
-            <div className="w-12 h-12 rounded-2xl bg-amber-950/60 border border-amber-800/80 flex items-center justify-center mb-3 shadow-lg">
-              <Lock className="w-6 h-6 text-amber-400" />
+            <div className="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center mb-3">
+              <Lock className="w-6 h-6 text-amber-500" />
             </div>
-            <span className="text-xs font-extrabold text-amber-300">Autenticação Necessária</span>
+            <span className="text-xs font-bold text-amber-400">Autenticação Necessária</span>
             <span className="text-[10px] text-slate-400 mb-3">Senha ou usuário inválidos</span>
             {onOpenDiagnostics && (
               <button
                 onClick={() => onOpenDiagnostics(camera)}
-                className="px-3.5 py-1.5 text-xs font-bold bg-amber-600/20 text-amber-300 rounded-xl border border-amber-500/40 hover:bg-amber-600/30 transition shadow-sm"
+                className="px-3 py-1.5 text-xs font-bold bg-amber-500/20 text-amber-400 rounded-lg border border-amber-500/30 hover:bg-amber-500/30 transition"
               >
                 Configurar Credenciais
               </button>
@@ -205,20 +205,20 @@ export const CameraTile: React.FC<CameraTileProps> = ({
 
         {/* Floating PTZ Controller overlay when active */}
         {showPTZ && hasPTZ && (
-          <div className="absolute top-12 right-3 z-30 animate-in fade-in zoom-in-95 duration-150">
+          <div className="absolute top-12 right-3 z-30 duration-150">
             <PTZController camera={camera} onClose={() => setShowPTZ(false)} />
           </div>
         )}
       </div>
 
       {/* Bottom Action Controls Overlay (Appears on Hover) */}
-      <div className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/95 via-black/60 to-transparent flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
+      <div className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/80 to-transparent flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
         <div className="flex items-center space-x-1.5">
           {onSnapshot && (
             <button
               onClick={() => onSnapshot(camera)}
               title="Abrir Visualizador de Snapshot"
-              className="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 text-xs transition shadow-md hover:scale-105"
+              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 border border-slate-700/40 text-xs transition"
             >
               <CameraIcon className="w-3.5 h-3.5" />
             </button>
@@ -226,7 +226,7 @@ export const CameraTile: React.FC<CameraTileProps> = ({
           <button
             onClick={handleDownloadSnapshot}
             title="Download Rápido de Imagem (JPEG)"
-            className="p-2 rounded-xl bg-slate-900/90 hover:bg-emerald-900/70 text-slate-300 hover:text-emerald-300 border border-slate-700/80 hover:border-emerald-700/60 text-xs transition shadow-md hover:scale-105"
+            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-emerald-400 border border-slate-700/40 text-xs transition"
           >
             <Download className="w-3.5 h-3.5" />
           </button>
@@ -234,7 +234,7 @@ export const CameraTile: React.FC<CameraTileProps> = ({
             <button
               onClick={() => onOpenDiagnostics(camera)}
               title="Diagnóstico Técnico (10 etapas)"
-              className="p-2 rounded-xl bg-slate-900/90 hover:bg-blue-600/30 text-blue-400 hover:text-blue-300 border border-slate-700/80 hover:border-blue-500/40 text-xs transition shadow-md hover:scale-105"
+              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-blue-400 border border-slate-700/40 text-xs transition"
             >
               <Activity className="w-3.5 h-3.5" />
             </button>
@@ -242,7 +242,7 @@ export const CameraTile: React.FC<CameraTileProps> = ({
           <button
             onClick={reloadStream}
             title="Recarregar Transmissão"
-            className="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 text-xs transition shadow-md hover:scale-105"
+            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 border border-slate-700/40 text-xs transition"
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
@@ -252,8 +252,8 @@ export const CameraTile: React.FC<CameraTileProps> = ({
           {onToggleMaximize && (
             <button
               onClick={onToggleMaximize}
-              title={isMaximized ? 'Restaurar Grade Mosaico' : 'Ampliar Câmera (Stream Principal 1080p/4K)'}
-              className="p-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white border border-blue-400/50 text-xs transition shadow-lg shadow-blue-600/30 hover:scale-105"
+              title={isMaximized ? 'Restaurar Grade Mosaico' : 'Ampliar Câmera (Stream Principal)'}
+              className="p-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white border border-blue-500/50 text-xs transition"
             >
               {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
             </button>
@@ -262,7 +262,7 @@ export const CameraTile: React.FC<CameraTileProps> = ({
             <button
               onClick={onRemoveSlot}
               title="Remover Câmera deste Slot"
-              className="p-2 rounded-xl bg-slate-900/90 hover:bg-rose-900/80 text-slate-400 hover:text-rose-200 border border-slate-700/80 hover:border-rose-700/60 text-xs transition shadow-md hover:scale-105"
+              className="p-2 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white border border-slate-700/40 text-xs transition"
             >
               <X className="w-3.5 h-3.5" />
             </button>
