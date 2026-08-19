@@ -108,6 +108,7 @@ func (r *Repository) GetLayout(ctx context.Context, id string) (*Layout, error) 
 		return nil, err
 	}
 	l.IsDefault = isDefInt == 1
+	l.Items = make([]LayoutItem, 0)
 
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT li.id, li.layout_id, li.position, li.camera_id, li.preferred_profile, c.name, c.host
@@ -136,12 +137,13 @@ func (r *Repository) ListLayouts(ctx context.Context) ([]*Layout, error) {
 	}
 	defer rows.Close()
 
-	var list []*Layout
+	list := make([]*Layout, 0)
 	for rows.Next() {
 		var l Layout
 		var isDefInt int
 		if err := rows.Scan(&l.ID, &l.Name, &l.GridSize, &isDefInt, &l.CreatedAt, &l.UpdatedAt); err == nil {
 			l.IsDefault = isDefInt == 1
+			l.Items = make([]LayoutItem, 0)
 			list = append(list, &l)
 		}
 	}
@@ -240,7 +242,7 @@ func (r *Repository) ListGroups(ctx context.Context) ([]Group, error) {
 	}
 	defer rows.Close()
 
-	var groups []Group
+	groups := make([]Group, 0)
 	for rows.Next() {
 		var g Group
 		if err := rows.Scan(&g.ID, &g.Name, &g.Description, &g.CreatedAt, &g.CameraCount); err == nil {

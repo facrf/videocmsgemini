@@ -16,6 +16,7 @@ import (
 	"videocms/internal/database"
 	"videocms/internal/discovery"
 	"videocms/internal/events"
+	"videocms/internal/onvif"
 	"videocms/internal/streaming"
 )
 
@@ -225,6 +226,9 @@ func (s *Server) handleNetworkInterfaces(w http.ResponseWriter, r *http.Request)
 		writeError(w, http.StatusInternalServerError, "NETWORK_ERROR", err.Error())
 		return
 	}
+	if ifaces == nil {
+		ifaces = make([]discovery.NetworkInterfaceInfo, 0)
+	}
 	writeJSON(w, http.StatusOK, ifaces)
 }
 
@@ -243,6 +247,9 @@ func (s *Server) handleListCameras(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "DB_ERROR", err.Error())
 		return
+	}
+	if cameras == nil {
+		cameras = make([]*camera.Camera, 0)
 	}
 
 	w.Header().Set("X-Total-Count", strconv.Itoa(total))
@@ -420,6 +427,9 @@ func (s *Server) handleLiveStream(w http.ResponseWriter, r *http.Request) {
 // List active streams
 func (s *Server) handleListStreams(w http.ResponseWriter, r *http.Request) {
 	streams := s.streamMgr.GetActiveStreamsList()
+	if streams == nil {
+		streams = make([]map[string]interface{}, 0)
+	}
 	writeJSON(w, http.StatusOK, streams)
 }
 
@@ -446,6 +456,9 @@ func (s *Server) handleListDiscoveryJobs(w http.ResponseWriter, r *http.Request)
 		writeError(w, http.StatusInternalServerError, "DB_ERROR", err.Error())
 		return
 	}
+	if jobs == nil {
+		jobs = make([]*discovery.DiscoveryJob, 0)
+	}
 	writeJSON(w, http.StatusOK, jobs)
 }
 
@@ -459,6 +472,9 @@ func (s *Server) handleGetDiscoveryJob(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "DB_ERROR", err.Error())
 		return
+	}
+	if job != nil && job.Results == nil {
+		job.Results = make([]discovery.DiscoveryResult, 0)
 	}
 
 	writeJSON(w, http.StatusOK, job)
@@ -519,6 +535,9 @@ func (s *Server) handleListLayouts(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "DB_ERROR", err.Error())
 		return
 	}
+	if layouts == nil {
+		layouts = make([]*camera.Layout, 0)
+	}
 	writeJSON(w, http.StatusOK, layouts)
 }
 
@@ -548,6 +567,9 @@ func (s *Server) handleGetLayout(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "DB_ERROR", err.Error())
 		return
+	}
+	if layout != nil && layout.Items == nil {
+		layout.Items = make([]camera.LayoutItem, 0)
 	}
 	writeJSON(w, http.StatusOK, layout)
 }
@@ -594,6 +616,9 @@ func (s *Server) handleListGroups(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "DB_ERROR", err.Error())
 		return
+	}
+	if groups == nil {
+		groups = make([]camera.Group, 0)
 	}
 	writeJSON(w, http.StatusOK, groups)
 }
@@ -701,6 +726,9 @@ func (s *Server) handlePTZGetPresets(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "PTZ_FAILED", err.Error())
 		return
+	}
+	if presets == nil {
+		presets = make([]onvif.PTZPreset, 0)
 	}
 
 	writeJSON(w, http.StatusOK, presets)

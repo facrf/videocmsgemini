@@ -27,13 +27,18 @@ export const PTZController: React.FC<PTZControllerProps> = ({ camera, onClose })
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    if (camera.capabilities?.ptz) {
+    if (camera?.capabilities?.ptz && camera.id) {
       api.ptzGetPresets(camera.id).then((p) => {
-        setPresets(p);
-        if (p.length > 0) setSelectedPreset(p[0].token);
-      }).catch(() => {});
+        const safePresets = p || [];
+        setPresets(safePresets);
+        if (safePresets.length > 0 && safePresets[0]?.token) {
+          setSelectedPreset(safePresets[0].token);
+        }
+      }).catch(() => {
+        setPresets([]);
+      });
     }
-  }, [camera.id]);
+  }, [camera?.id, camera?.capabilities?.ptz]);
 
   const handleMove = async (pan: number, tilt: number, zoom: number, dirName: string) => {
     setActiveDirection(dirName);

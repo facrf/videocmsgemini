@@ -27,12 +27,13 @@ interface CamerasViewProps {
 }
 
 export const CamerasView: React.FC<CamerasViewProps> = ({
-  cameras,
+  cameras = [],
   onRefresh,
   onOpenSnapshot,
   onOpenDiagnostics,
   showToast,
 }) => {
+  const safeCameras = cameras || [];
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
@@ -43,14 +44,15 @@ export const CamerasView: React.FC<CamerasViewProps> = ({
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Filter cameras
-  const filteredCameras = cameras.filter((cam) => {
+  const filteredCameras = safeCameras.filter((cam) => {
+    if (!cam) return false;
     const matchesSearch =
-      cam.name.toLowerCase().includes(search.toLowerCase()) ||
-      cam.host.toLowerCase().includes(search.toLowerCase()) ||
-      cam.manufacturer.toLowerCase().includes(search.toLowerCase()) ||
-      cam.model.toLowerCase().includes(search.toLowerCase()) ||
-      cam.tags?.some((t) => t.toLowerCase().includes(search.toLowerCase())) ||
-      cam.groups?.some((g) => g.toLowerCase().includes(search.toLowerCase()));
+      (cam.name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (cam.host || '').toLowerCase().includes(search.toLowerCase()) ||
+      (cam.manufacturer || '').toLowerCase().includes(search.toLowerCase()) ||
+      (cam.model || '').toLowerCase().includes(search.toLowerCase()) ||
+      (cam.tags || []).some((t) => (t || '').toLowerCase().includes(search.toLowerCase())) ||
+      (cam.groups || []).some((g) => (g || '').toLowerCase().includes(search.toLowerCase()));
 
     const matchesStatus =
       statusFilter === 'all' ||
@@ -201,7 +203,7 @@ export const CamerasView: React.FC<CamerasViewProps> = ({
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
               }`}
             >
-              Todas ({cameras.length})
+              Todas ({safeCameras.length})
             </button>
             <button
               onClick={() => setStatusFilter('online')}
@@ -211,7 +213,7 @@ export const CamerasView: React.FC<CamerasViewProps> = ({
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
               }`}
             >
-              Online ({cameras.filter((c) => c.status === 'online').length})
+              Online ({safeCameras.filter((c) => c && c.status === 'online').length})
             </button>
             <button
               onClick={() => setStatusFilter('offline')}
@@ -221,7 +223,7 @@ export const CamerasView: React.FC<CamerasViewProps> = ({
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
               }`}
             >
-              Offline ({cameras.filter((c) => c.status === 'offline').length})
+              Offline ({safeCameras.filter((c) => c && c.status === 'offline').length})
             </button>
             <button
               onClick={() => setStatusFilter('auth_required')}
@@ -231,7 +233,7 @@ export const CamerasView: React.FC<CamerasViewProps> = ({
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
               }`}
             >
-              Requer Senha ({cameras.filter((c) => c.status === 'auth_required').length})
+              Requer Senha ({safeCameras.filter((c) => c && c.status === 'auth_required').length})
             </button>
           </div>
 

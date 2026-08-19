@@ -131,7 +131,7 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({ camera, onCl
 
               {/* 10 Stages Table */}
               <div className="space-y-2.5">
-                {report.stages.map((stage, idx) => (
+                {(report.stages || []).map((stage, idx) => (
                   <div
                     key={idx}
                     className="p-4 rounded-2xl bg-slate-950/90 border border-slate-800/90 flex items-start justify-between space-x-3 hover:border-slate-700 transition shadow-inner"
@@ -164,7 +164,7 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({ camera, onCl
                     <Layers className="w-4 h-4 text-cyan-400" /> Perfis de Vídeo Detectados
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {report.capabilities.profiles.map((p, i) => (
+                    {(report.capabilities.profiles || []).map((p, i) => (
                       <div key={i} className="p-3.5 bg-slate-900 rounded-xl border border-slate-800 text-xs font-mono space-y-1">
                         <div className="flex items-center justify-between text-slate-200 font-bold">
                           <span>{p.name}</span>

@@ -289,7 +289,7 @@ func (r *Repository) ListFiltered(ctx context.Context, search, status, group, ta
 	}
 	defer rows.Close()
 
-	var cameras []*Camera
+	cameras := make([]*Camera, 0)
 	for rows.Next() {
 		var cam Camera
 		var enabledInt int
@@ -400,11 +400,11 @@ func (r *Repository) Delete(ctx context.Context, id string) error {
 func (r *Repository) GetTags(ctx context.Context, cameraID string) ([]string, error) {
 	rows, err := r.db.QueryContext(ctx, "SELECT tag FROM camera_tags WHERE camera_id = ? ORDER BY tag", cameraID)
 	if err != nil {
-		return nil, err
+		return make([]string, 0), err
 	}
 	defer rows.Close()
 
-	var tags []string
+	tags := make([]string, 0)
 	for rows.Next() {
 		var tag string
 		if err := rows.Scan(&tag); err == nil {
@@ -434,11 +434,11 @@ func (r *Repository) GetGroups(ctx context.Context, cameraID string) ([]string, 
 		WHERE cg.camera_id = ?
 		ORDER BY g.name`, cameraID)
 	if err != nil {
-		return nil, err
+		return make([]string, 0), err
 	}
 	defer rows.Close()
 
-	var groups []string
+	groups := make([]string, 0)
 	for rows.Next() {
 		var g string
 		if err := rows.Scan(&g); err == nil {

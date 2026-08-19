@@ -25,11 +25,12 @@ interface DiscoveryViewProps {
 }
 
 export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
-  jobs,
+  jobs = [],
   onRefreshJobs,
   onCameraAdded,
   showToast,
 }) => {
+  const safeJobs = jobs || [];
   const [interfaces, setInterfaces] = useState<NetworkInterfaceInfo[]>([]);
   const [selectedIface, setSelectedIface] = useState<string>('');
   const [cidr, setCidr] = useState<string>('');
@@ -40,25 +41,30 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
   // Fetch network interfaces on load
   useEffect(() => {
     api.getInterfaces().then((ifaces) => {
-      setInterfaces(ifaces);
-      if (ifaces.length > 0) {
-        setSelectedIface(ifaces[0].name);
-        if (ifaces[0].subnets.length > 0) {
-          setCidr(ifaces[0].subnets[0]);
+      const safeIfaces = ifaces || [];
+      setInterfaces(safeIfaces);
+      if (safeIfaces.length > 0) {
+        setSelectedIface(safeIfaces[0].name || '');
+        if (safeIfaces[0].subnets && safeIfaces[0].subnets.length > 0) {
+          setCidr(safeIfaces[0].subnets[0]);
         }
       }
-    }).catch(() => {});
+    }).catch(() => {
+      setInterfaces([]);
+    });
   }, []);
 
   // Update active job from latest jobs list or load details
   useEffect(() => {
-    const running = jobs.find((j) => j.status === 'running');
-    if (running) {
-      api.getDiscoveryJob(running.id).then((j) => setActiveJob(j)).catch(() => {});
-    } else if (jobs.length > 0 && !activeJob) {
-      api.getDiscoveryJob(jobs[0].id).then((j) => setActiveJob(j)).catch(() => {});
+    const running = safeJobs.find((j) => j && j.status === 'running');
+    if (running && running.id) {
+      api.getDiscoveryJob(running.id).then((j) => { if (j) setActiveJob(j); }).catch(() => {});
+    } else if (safeJobs.length > 0 && !activeJob) {
+      if (safeJobs[0] && safeJobs[0].id) {
+        api.getDiscoveryJob(safeJobs[0].id).then((j) => { if (j) setActiveJob(j); }).catch(() => {});
+      }
     }
-  }, [jobs]);
+  }, [safeJobs]);
 
   const handleStartScan = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,8 +93,8 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
 
   const handleSelectInterface = (ifaceName: string) => {
     setSelectedIface(ifaceName);
-    const iface = interfaces.find((i) => i.name === ifaceName);
-    if (iface && iface.subnets.length > 0) {
+    const iface = (interfaces || []).find((i) => i && i.name === ifaceName);
+    if (iface && iface.subnets && iface.subnets.length > 0) {
       setCidr(iface.subnets[0]);
     }
   };
@@ -128,11 +134,15 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
                 onChange={(e) => handleSelectInterface(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white focus:outline-none focus:border-blue-500 transition shadow-inner font-mono font-bold"
               >
-                {interfaces.map((i) => (
-                  <option key={i.name} value={i.name} className="bg-slate-900">
-                    {i.name} ({i.ips.join(', ')})
-                  </option>
-                ))}
+                {interfaces.length === 0 ? (
+                  <option value="">Nenhuma interface detectada</option>
+                ) : (
+                  interfaces.map((i) => (
+                    <option key={i.name} value={i.name} className="bg-slate-900">
+                      {i.name} ({(i.ips || []).join(', ') || 'sem IP'})
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
@@ -251,7 +261,7 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {activeJob.results.map((dev) => (
+                {(activeJob.results || []).map((dev) => (
                   <div
                     key={dev.id}
                     className="p-5 rounded-2xl bg-slate-950 border border-slate-800/90 hover:border-cyan-500/60 transition flex flex-col justify-between space-y-4 shadow-xl"
@@ -317,17 +327,17 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
           <Clock className="w-4 h-4 text-cyan-400" /> Histórico de Varreduras
         </h3>
 
-        {jobs.length === 0 ? (
+        {safeJobs.length === 0 ? (
           <div className="py-10 text-center text-slate-500 text-xs">
             Nenhuma varredura anterior registrada.
           </div>
         ) : (
           <div className="divide-y divide-slate-800/60">
-            {jobs.map((j) => (
+            {safeJobs.map((j) => (
               <div
                 key={j.id}
                 onClick={() => {
-                  api.getDiscoveryJob(j.id).then((res) => setActiveJob(res));
+                  api.getDiscoveryJob(j.id).then((res) => { if (res) setActiveJob(res); });
                 }}
                 className={`py-3.5 px-4 rounded-2xl flex items-center justify-between text-xs cursor-pointer hover:bg-slate-900/60 transition-all ${
                   activeJob?.id === j.id ? 'bg-slate-900 border border-slate-700/80 shadow-md' : ''

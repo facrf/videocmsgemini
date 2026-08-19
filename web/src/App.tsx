@@ -54,10 +54,10 @@ export function App() {
         api.listDiscoveryJobs(),
         api.listLayouts(),
       ]);
-      setCameras(cams);
-      setStats(st);
-      setRecentJobs(jbs);
-      setLayouts(lay);
+      setCameras(cams || []);
+      setStats(st || null);
+      setRecentJobs(jbs || []);
+      setLayouts(lay || []);
     } catch (err: any) {
       console.error('Failed to load data:', err);
     } finally {
@@ -73,16 +73,16 @@ export function App() {
   const handleSSEEvent = useCallback(
     (event: SSEEvent) => {
       if (event.type.startsWith('camera.')) {
-        api.listCameras().then(setCameras).catch(() => {});
+        api.listCameras().then((res) => setCameras(res || [])).catch(() => {});
         api.getStats().then(setStats).catch(() => {});
         if (event.type === 'camera.created') {
           showToast(`Nova câmera adicionada ao sistema.`, 'info');
         }
       } else if (event.type.startsWith('discovery.')) {
-        api.listDiscoveryJobs().then(setRecentJobs).catch(() => {});
+        api.listDiscoveryJobs().then((res) => setRecentJobs(res || [])).catch(() => {});
         api.getStats().then(setStats).catch(() => {});
       } else if (event.type.startsWith('layout.')) {
-        api.listLayouts().then(setLayouts).catch(() => {});
+        api.listLayouts().then((res) => setLayouts(res || [])).catch(() => {});
       } else if (event.type.startsWith('stream.')) {
         api.getStats().then(setStats).catch(() => {});
       }
@@ -108,8 +108,8 @@ export function App() {
         <Sidebar
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          cameraCount={cameras.length}
-          discoveredCount={recentJobs.find((j) => j.status === 'running')?.found_devices}
+          cameraCount={cameras?.length || 0}
+          discoveredCount={(recentJobs || []).find((j) => j && j.status === 'running')?.found_devices || 0}
         />
 
         <main className="flex-1 bg-[#060911] overflow-hidden relative">

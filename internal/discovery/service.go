@@ -194,6 +194,7 @@ func (s *Service) GetJob(ctx context.Context, id string) (*DiscoveryJob, error) 
 		return nil, err
 	}
 	job.Status = JobStatus(statusStr)
+	job.Results = make([]DiscoveryResult, 0)
 
 	// Fetch results
 	resRows, err := s.db.QueryContext(ctx, `
@@ -224,12 +225,13 @@ func (s *Service) ListJobs(ctx context.Context) ([]*DiscoveryJob, error) {
 	}
 	defer rows.Close()
 
-	var jobs []*DiscoveryJob
+	jobs := make([]*DiscoveryJob, 0)
 	for rows.Next() {
 		var j DiscoveryJob
 		var statusStr string
 		if err := rows.Scan(&j.ID, &j.InterfaceName, &j.CIDR, &statusStr, &j.Progress, &j.TotalHosts, &j.ScannedHosts, &j.FoundDevices, &j.ErrorMessage, &j.CreatedAt, &j.CompletedAt); err == nil {
 			j.Status = JobStatus(statusStr)
+			j.Results = make([]DiscoveryResult, 0)
 			jobs = append(jobs, &j)
 		}
 	}
@@ -391,10 +393,10 @@ func (s *Service) AddDeviceToCameras(ctx context.Context, jobID, deviceID, name,
 func (s *Service) GetLocalInterfaces() ([]NetworkInterfaceInfo, error) {
 	ifaces, err := net.Interfaces()
 	if err != nil {
-		return nil, err
+		return make([]NetworkInterfaceInfo, 0), err
 	}
 
-	var result []NetworkInterfaceInfo
+	result := make([]NetworkInterfaceInfo, 0)
 	for _, iface := range ifaces {
 		if iface.Flags&net.FlagUp == 0 {
 			continue
@@ -405,8 +407,8 @@ func (s *Service) GetLocalInterfaces() ([]NetworkInterfaceInfo, error) {
 			continue
 		}
 
-		var ips []string
-		var subnets []string
+		ips := make([]string, 0)
+		subnets := make([]string, 0)
 		for _, addr := range addrs {
 			ipNet, ok := addr.(*net.IPNet)
 			if ok && ipNet.IP.To4() != nil {
@@ -432,9 +434,9 @@ func (s *Service) GetLocalInterfaces() ([]NetworkInterfaceInfo, error) {
 func (s *Service) GetLocalSubnets() ([]string, error) {
 	ifaces, err := s.GetLocalInterfaces()
 	if err != nil {
-		return nil, err
+		return make([]string, 0), err
 	}
-	var subnets []string
+	subnets := make([]string, 0)
 	for _, iface := range ifaces {
 		for _, sub := range iface.Subnets {
 			if !strings.HasPrefix(sub, "127.") {

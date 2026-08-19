@@ -88,11 +88,16 @@ func (c *CameraCapabilities) MarshalCapabilities() string {
 
 // UnmarshalCapabilities parses JSON string into CameraCapabilities.
 func UnmarshalCapabilities(raw string) CameraCapabilities {
-	var caps CameraCapabilities
+	caps := CameraCapabilities{
+		Profiles: make([]StreamProfile, 0),
+	}
 	if raw == "" {
 		return caps
 	}
 	_ = json.Unmarshal([]byte(raw), &caps)
+	if caps.Profiles == nil {
+		caps.Profiles = make([]StreamProfile, 0)
+	}
 	return caps
 }
 

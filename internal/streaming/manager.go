@@ -74,7 +74,7 @@ func (sm *StreamManager) GetActiveStreamsList() []map[string]interface{} {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 
-	var list []map[string]interface{}
+	list := make([]map[string]interface{}, 0)
 	for key, s := range sm.streams {
 		s.mu.RLock()
 		list = append(list, map[string]interface{}{

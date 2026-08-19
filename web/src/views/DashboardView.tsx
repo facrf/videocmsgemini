@@ -30,30 +30,32 @@ interface DashboardViewProps {
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   stats,
-  cameras,
-  recentJobs,
+  cameras = [],
+  recentJobs = [],
   onNavigate,
   onAddCamera,
   onOpenSnapshot,
   onOpenDiagnostics,
   onRefresh,
 }) => {
+  const safeCameras = cameras || [];
+  const safeRecentJobs = recentJobs || [];
   const [testingAll, setTestingAll] = useState(false);
   const [batchResults, setBatchResults] = useState<{ success: number; failed: number } | null>(null);
 
-  const onlineCameras = cameras.filter((c) => c.status === 'online');
-  const offlineCameras = cameras.filter((c) => c.status === 'offline');
-  const authCameras = cameras.filter((c) => c.status === 'auth_required');
+  const onlineCameras = safeCameras.filter((c) => c && c.status === 'online');
+  const offlineCameras = safeCameras.filter((c) => c && c.status === 'offline');
+  const authCameras = safeCameras.filter((c) => c && c.status === 'auth_required');
 
   const handleTestAll = async () => {
     setTestingAll(true);
     setBatchResults(null);
     try {
       const res = await api.testAllCameras();
-      const succ = res.results.filter((r) => r.success).length;
+      const succ = (res?.results || []).filter((r) => r.success).length;
       setBatchResults({
         success: succ,
-        failed: res.results.length - succ,
+        failed: (res?.results?.length || 0) - succ,
       });
       if (onRefresh) onRefresh();
     } catch (err) {
@@ -326,13 +328,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </button>
             </div>
 
-            {recentJobs.length === 0 ? (
+            {safeRecentJobs.length === 0 ? (
               <div className="py-12 text-center text-slate-500 text-xs bg-slate-950/60 rounded-2xl border border-slate-800/80 p-4">
                 Nenhuma varredura executada recentemente.
               </div>
             ) : (
               <div className="space-y-3">
-                {recentJobs.slice(0, 4).map((job) => (
+                {safeRecentJobs.slice(0, 4).map((job) => (
                   <div
                     key={job.id}
                     onClick={() => onNavigate('discovery')}

@@ -195,4 +195,74 @@ func TestLayoutsAPI(t *testing.T) {
 	if len(layouts) != 1 {
 		t.Errorf("expected 1 layout, got %d", len(layouts))
 	}
+	if layouts[0].Items == nil {
+		t.Errorf("expected non-nil Items slice in layout")
+	}
+}
+
+func TestEmptyCollectionsJSONArrays(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	// 1. GET /api/cameras when empty should return []
+	resp, err := http.Get(ts.URL + "/api/cameras")
+	if err != nil {
+		t.Fatalf("GET /api/cameras failed: %v", err)
+	}
+	defer resp.Body.Close()
+	var rawJSON bytes.Buffer
+	_, _ = rawJSON.ReadFrom(resp.Body)
+	trimmed := bytes.TrimSpace(rawJSON.Bytes())
+	if !bytes.Equal(trimmed, []byte("[]")) {
+		t.Errorf("expected cameras JSON to be [], got: %s", string(trimmed))
+	}
+
+	// 2. GET /api/discovery when empty should return []
+	resp, err = http.Get(ts.URL + "/api/discovery")
+	if err != nil {
+		t.Fatalf("GET /api/discovery failed: %v", err)
+	}
+	defer resp.Body.Close()
+	rawJSON.Reset()
+	_, _ = rawJSON.ReadFrom(resp.Body)
+	trimmed = bytes.TrimSpace(rawJSON.Bytes())
+	if !bytes.Equal(trimmed, []byte("[]")) {
+		t.Errorf("expected discovery JSON to be [], got: %s", string(trimmed))
+	}
+
+	// 3. GET /api/layouts when empty should return []
+	resp, err = http.Get(ts.URL + "/api/layouts")
+	if err != nil {
+		t.Fatalf("GET /api/layouts failed: %v", err)
+	}
+	defer resp.Body.Close()
+	rawJSON.Reset()
+	_, _ = rawJSON.ReadFrom(resp.Body)
+	trimmed = bytes.TrimSpace(rawJSON.Bytes())
+	if !bytes.Equal(trimmed, []byte("[]")) {
+		t.Errorf("expected layouts JSON to be [], got: %s", string(trimmed))
+	}
+
+	// 4. GET /api/groups when empty should return []
+	resp, err = http.Get(ts.URL + "/api/groups")
+	if err != nil {
+		t.Fatalf("GET /api/groups failed: %v", err)
+	}
+	defer resp.Body.Close()
+	rawJSON.Reset()
+	_, _ = rawJSON.ReadFrom(resp.Body)
+	trimmed = bytes.TrimSpace(rawJSON.Bytes())
+	if !bytes.Equal(trimmed, []byte("[]")) {
+		t.Errorf("expected groups JSON to be [], got: %s", string(trimmed))
+	}
+
+	// 5. GET /api/stats
+	resp, err = http.Get(ts.URL + "/api/stats")
+	if err != nil {
+		t.Fatalf("GET /api/stats failed: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected stats 200, got %d", resp.StatusCode)
+	}
 }

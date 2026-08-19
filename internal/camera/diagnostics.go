@@ -29,6 +29,10 @@ func (d *DiagnosticsRunner) Run(ctx context.Context, cam *Camera, password strin
 		Host:       cam.Host,
 		TestedAt:   time.Now().UTC(),
 		Passed:     true,
+		Stages:     make([]DiagnosticStage, 0),
+		Capabilities: CameraCapabilities{
+			Profiles: make([]StreamProfile, 0),
+		},
 	}
 
 	// 1. Stage: Host & DNS Validation (SSRF Check)

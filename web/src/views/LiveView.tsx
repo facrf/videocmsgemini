@@ -24,12 +24,14 @@ interface LiveViewProps {
 }
 
 export const LiveView: React.FC<LiveViewProps> = ({
-  cameras,
-  layouts,
+  cameras = [],
+  layouts = [],
   onOpenSnapshot,
   onOpenDiagnostics,
   onRefreshLayouts,
 }) => {
+  const safeCameras = cameras || [];
+  const safeLayouts = layouts || [];
   const [gridSize, setGridSize] = useState<number>(4);
   const [assignedCameras, setAssignedCameras] = useState<Record<number, Camera>>({});
   const [maximizedSlot, setMaximizedSlot] = useState<number | null>(null);
@@ -49,14 +51,14 @@ export const LiveView: React.FC<LiveViewProps> = ({
 
   // Auto-populate default layout or first N cameras on load
   useEffect(() => {
-    if (Object.keys(assignedCameras).length === 0 && cameras.length > 0) {
-      const defLayout = layouts.find((l) => l.is_default);
+    if (Object.keys(assignedCameras).length === 0 && safeCameras.length > 0) {
+      const defLayout = safeLayouts.find((l) => l && l.is_default);
       if (defLayout) {
         applyLayout(defLayout);
       } else {
         const initial: Record<number, Camera> = {};
-        cameras.slice(0, gridSize).forEach((c, idx) => {
-          initial[idx] = c;
+        safeCameras.slice(0, gridSize).forEach((c, idx) => {
+          if (c) initial[idx] = c;
         });
         setAssignedCameras(initial);
       }
@@ -65,29 +67,34 @@ export const LiveView: React.FC<LiveViewProps> = ({
 
   // Patrol / Auto-Cycle timer
   useEffect(() => {
-    if (!isPatrolling || cameras.length <= gridSize) return;
+    if (!isPatrolling || safeCameras.length <= gridSize) return;
 
     const timer = setInterval(() => {
-      patrolIndexRef.current = (patrolIndexRef.current + gridSize) % cameras.length;
+      patrolIndexRef.current = (patrolIndexRef.current + gridSize) % safeCameras.length;
       const nextBatch: Record<number, Camera> = {};
       for (let i = 0; i < gridSize; i++) {
-        const camIndex = (patrolIndexRef.current + i) % cameras.length;
-        nextBatch[i] = cameras[camIndex];
+        const camIndex = (patrolIndexRef.current + i) % safeCameras.length;
+        if (safeCameras[camIndex]) {
+          nextBatch[i] = safeCameras[camIndex];
+        }
       }
       setAssignedCameras(nextBatch);
     }, patrolIntervalSec * 1000);
 
     return () => clearInterval(timer);
-  }, [isPatrolling, cameras, gridSize, patrolIntervalSec]);
+  }, [isPatrolling, safeCameras, gridSize, patrolIntervalSec]);
 
   const applyLayout = (layout: Layout) => {
-    setSelectedLayoutId(layout.id);
-    setGridSize(layout.grid_size);
+    if (!layout) return;
+    setSelectedLayoutId(layout.id || '');
+    setGridSize(layout.grid_size || 4);
     setMaximizedSlot(null);
 
     const newMap: Record<number, Camera> = {};
-    layout.items.forEach((item) => {
-      const cam = cameras.find((c) => c.id === item.camera_id);
+    const items = layout.items || [];
+    items.forEach((item) => {
+      if (!item) return;
+      const cam = safeCameras.find((c) => c && c.id === item.camera_id);
       if (cam) {
         newMap[item.position] = cam;
       }
@@ -97,7 +104,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
 
   const handleSelectLayout = (layoutId: string) => {
     if (!layoutId) return;
-    const l = layouts.find((item) => item.id === layoutId);
+    const l = safeLayouts.find((item) => item && item.id === layoutId);
     if (l) applyLayout(l);
   };
 
@@ -125,10 +132,10 @@ export const LiveView: React.FC<LiveViewProps> = ({
   };
 
   const handleAutoFillOnline = () => {
-    const online = cameras.filter((c) => c.status === 'online');
+    const online = safeCameras.filter((c) => c && c.status === 'online');
     const newMap: Record<number, Camera> = {};
     online.slice(0, gridSize).forEach((c, idx) => {
-      newMap[idx] = c;
+      if (c) newMap[idx] = c;
     });
     setAssignedCameras(newMap);
   };
@@ -143,10 +150,12 @@ export const LiveView: React.FC<LiveViewProps> = ({
   };
 
   // Filter drawer cameras
-  const filteredDrawerCameras = cameras.filter((c) =>
-    c.name.toLowerCase().includes(drawerSearch.toLowerCase()) ||
-    c.host.toLowerCase().includes(drawerSearch.toLowerCase()) ||
-    c.manufacturer.toLowerCase().includes(drawerSearch.toLowerCase())
+  const filteredDrawerCameras = safeCameras.filter((c) =>
+    c && (
+      (c.name || '').toLowerCase().includes(drawerSearch.toLowerCase()) ||
+      (c.host || '').toLowerCase().includes(drawerSearch.toLowerCase()) ||
+      (c.manufacturer || '').toLowerCase().includes(drawerSearch.toLowerCase())
+    )
   );
 
   // Render grid slots
@@ -225,7 +234,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
               className="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer font-bold font-mono"
             >
               <option value="" className="bg-slate-900 text-slate-400">Layouts Salvos...</option>
-              {layouts.map((l) => (
+              {safeLayouts.map((l) => (
                 <option key={l.id} value={l.id} className="bg-slate-900 text-white">
                   {l.name} ({l.grid_size}x) {l.is_default ? '★' : ''}
                 </option>
