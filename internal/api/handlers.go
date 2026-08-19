@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gorilla/mux"
+
 	"videocms/internal/camera"
 	"videocms/internal/config"
 	"videocms/internal/database"
@@ -62,67 +64,67 @@ func NewServer(
 	}
 }
 
-// Routes builds the http.Handler router.
+// Routes builds the http.Handler router using Gorilla Mux for method-based routing.
 func (s *Server) Routes() http.Handler {
-	mux := http.NewServeMux()
+	router := mux.NewRouter()
 
 	// Root API Info & System / Stats / Health
-	mux.HandleFunc("GET /api", s.handleAPIIndex)
-	mux.HandleFunc("GET /api/health", s.handleHealth)
-	mux.HandleFunc("GET /api/stats", s.handleStats)
-	mux.HandleFunc("GET /api/network/interfaces", s.handleNetworkInterfaces)
+	router.HandleFunc("/api", s.handleAPIIndex).Methods("GET")
+	router.HandleFunc("/api/health", s.handleHealth).Methods("GET")
+	router.HandleFunc("/api/stats", s.handleStats).Methods("GET")
+	router.HandleFunc("/api/network/interfaces", s.handleNetworkInterfaces).Methods("GET")
 
 	// SSE Events
-	mux.Handle("GET /api/events", s.broker)
+	router.Handle("/api/events", s.broker).Methods("GET")
 
 	// Cameras REST
-	mux.HandleFunc("GET /api/cameras", s.handleListCameras)
-	mux.HandleFunc("POST /api/cameras", s.handleCreateCamera)
-	mux.HandleFunc("POST /api/cameras/test-all", s.handleTestAllCameras)
-	mux.HandleFunc("GET /api/cameras/{id}", s.handleGetCamera)
-	mux.HandleFunc("PUT /api/cameras/{id}", s.handleUpdateCamera)
-	mux.HandleFunc("DELETE /api/cameras/{id}", s.handleDeleteCamera)
-	mux.HandleFunc("POST /api/cameras/{id}/update-ip", s.handleUpdateCameraIP)
-	mux.HandleFunc("POST /api/cameras/{id}/test", s.handleTestCamera)
-	mux.HandleFunc("GET /api/cameras/{id}/capabilities", s.handleGetCameraCapabilities)
-	mux.HandleFunc("GET /api/cameras/{id}/diagnostics", s.handleGetCameraDiagnostics)
-	mux.HandleFunc("GET /api/cameras/{id}/snapshot", s.handleGetCameraSnapshot)
-	mux.HandleFunc("GET /api/cameras/{id}/live", s.handleLiveStream)
+	router.HandleFunc("/api/cameras", s.handleListCameras).Methods("GET")
+	router.HandleFunc("/api/cameras", s.handleCreateCamera).Methods("POST")
+	router.HandleFunc("/api/cameras/test-all", s.handleTestAllCameras).Methods("POST")
+	router.HandleFunc("/api/cameras/{id}", s.handleGetCamera).Methods("GET")
+	router.HandleFunc("/api/cameras/{id}", s.handleUpdateCamera).Methods("PUT")
+	router.HandleFunc("/api/cameras/{id}", s.handleDeleteCamera).Methods("DELETE")
+	router.HandleFunc("/api/cameras/{id}/update-ip", s.handleUpdateCameraIP).Methods("POST")
+	router.HandleFunc("/api/cameras/{id}/test", s.handleTestCamera).Methods("POST")
+	router.HandleFunc("/api/cameras/{id}/capabilities", s.handleGetCameraCapabilities).Methods("GET")
+	router.HandleFunc("/api/cameras/{id}/diagnostics", s.handleGetCameraDiagnostics).Methods("GET")
+	router.HandleFunc("/api/cameras/{id}/snapshot", s.handleGetCameraSnapshot).Methods("GET")
+	router.HandleFunc("/api/cameras/{id}/live", s.handleLiveStream).Methods("GET")
 
 	// Camera PTZ Controls
-	mux.HandleFunc("POST /api/cameras/{id}/ptz/move", s.handlePTZMove)
-	mux.HandleFunc("POST /api/cameras/{id}/ptz/stop", s.handlePTZStop)
-	mux.HandleFunc("GET /api/cameras/{id}/ptz/presets", s.handlePTZGetPresets)
-	mux.HandleFunc("POST /api/cameras/{id}/ptz/presets/{presetId}/goto", s.handlePTZGotoPreset)
+	router.HandleFunc("/api/cameras/{id}/ptz/move", s.handlePTZMove).Methods("POST")
+	router.HandleFunc("/api/cameras/{id}/ptz/stop", s.handlePTZStop).Methods("POST")
+	router.HandleFunc("/api/cameras/{id}/ptz/presets", s.handlePTZGetPresets).Methods("GET")
+	router.HandleFunc("/api/cameras/{id}/ptz/presets/{presetId}/goto", s.handlePTZGotoPreset).Methods("POST")
 
 	// Discovery REST
-	mux.HandleFunc("POST /api/discovery", s.handleStartDiscovery)
-	mux.HandleFunc("GET /api/discovery", s.handleListDiscoveryJobs)
-	mux.HandleFunc("GET /api/discovery/{id}", s.handleGetDiscoveryJob)
-	mux.HandleFunc("POST /api/discovery/{id}/cancel", s.handleCancelDiscoveryJob)
-	mux.HandleFunc("POST /api/discovery/{id}/devices/{deviceId}/probe", s.handleProbeDevice)
-	mux.HandleFunc("POST /api/discovery/{id}/devices/{deviceId}/add", s.handleAddDiscoveredDevice)
+	router.HandleFunc("/api/discovery", s.handleStartDiscovery).Methods("POST")
+	router.HandleFunc("/api/discovery", s.handleListDiscoveryJobs).Methods("GET")
+	router.HandleFunc("/api/discovery/{id}", s.handleGetDiscoveryJob).Methods("GET")
+	router.HandleFunc("/api/discovery/{id}/cancel", s.handleCancelDiscoveryJob).Methods("POST")
+	router.HandleFunc("/api/discovery/{id}/devices/{deviceId}/probe", s.handleProbeDevice).Methods("POST")
+	router.HandleFunc("/api/discovery/{id}/devices/{deviceId}/add", s.handleAddDiscoveredDevice).Methods("POST")
 
 	// Layouts REST
-	mux.HandleFunc("GET /api/layouts", s.handleListLayouts)
-	mux.HandleFunc("POST /api/layouts", s.handleCreateLayout)
-	mux.HandleFunc("GET /api/layouts/{id}", s.handleGetLayout)
-	mux.HandleFunc("PUT /api/layouts/{id}", s.handleUpdateLayout)
-	mux.HandleFunc("DELETE /api/layouts/{id}", s.handleDeleteLayout)
+	router.HandleFunc("/api/layouts", s.handleListLayouts).Methods("GET")
+	router.HandleFunc("/api/layouts", s.handleCreateLayout).Methods("POST")
+	router.HandleFunc("/api/layouts/{id}", s.handleGetLayout).Methods("GET")
+	router.HandleFunc("/api/layouts/{id}", s.handleUpdateLayout).Methods("PUT")
+	router.HandleFunc("/api/layouts/{id}", s.handleDeleteLayout).Methods("DELETE")
 
 	// Groups REST
-	mux.HandleFunc("GET /api/groups", s.handleListGroups)
-	mux.HandleFunc("POST /api/groups", s.handleCreateGroup)
-	mux.HandleFunc("DELETE /api/groups/{id}", s.handleDeleteGroup)
+	router.HandleFunc("/api/groups", s.handleListGroups).Methods("GET")
+	router.HandleFunc("/api/groups", s.handleCreateGroup).Methods("POST")
+	router.HandleFunc("/api/groups/{id}", s.handleDeleteGroup).Methods("DELETE")
 
 	// Streams REST
-	mux.HandleFunc("GET /api/streams", s.handleListStreams)
+	router.HandleFunc("/api/streams", s.handleListStreams).Methods("GET")
 
 	// Static SPA Serving for all other routes
-	mux.HandleFunc("/", s.handleStaticSPA)
+	router.PathPrefix("/").HandlerFunc(s.handleStaticSPA)
 
 	// Wrap middlewares
-	handler := Chain(mux,
+	handler := Chain(router,
 		RecoveryMiddleware,
 		TrailingSlashMiddleware,
 		LoggingMiddleware,
@@ -274,7 +276,7 @@ func (s *Server) handleCreateCamera(w http.ResponseWriter, r *http.Request) {
 
 // Get camera
 func (s *Server) handleGetCamera(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	vars := mux.Vars(r); id := vars["id"]
 	cam, err := s.camService.GetCamera(r.Context(), id)
 	if errors.Is(err, camera.ErrCameraNotFound) {
 		writeError(w, http.StatusNotFound, "CAMERA_NOT_FOUND", "Camera not found")
@@ -290,7 +292,7 @@ func (s *Server) handleGetCamera(w http.ResponseWriter, r *http.Request) {
 
 // Update camera
 func (s *Server) handleUpdateCamera(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := mux.Vars(r)["id"]
 	var cam camera.Camera
 	if err := json.NewDecoder(r.Body).Decode(&cam); err != nil {
 		writeError(w, http.StatusBadRequest, "INVALID_PAYLOAD", "Invalid request payload: "+err.Error())
@@ -312,7 +314,7 @@ func (s *Server) handleUpdateCamera(w http.ResponseWriter, r *http.Request) {
 
 // Update camera IP (DHCP migration)
 func (s *Server) handleUpdateCameraIP(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := mux.Vars(r)["id"]
 	var req struct {
 		Host string `json:"host"`
 		Port int    `json:"port,omitempty"`
@@ -340,7 +342,7 @@ func (s *Server) handleUpdateCameraIP(w http.ResponseWriter, r *http.Request) {
 
 // Delete camera
 func (s *Server) handleDeleteCamera(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := mux.Vars(r)["id"]
 	s.streamMgr.StopStream(id, "main")
 	s.streamMgr.StopStream(id, "sub")
 
@@ -358,7 +360,7 @@ func (s *Server) handleDeleteCamera(w http.ResponseWriter, r *http.Request) {
 
 // Test camera connection
 func (s *Server) handleTestCamera(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := mux.Vars(r)["id"]
 	var req struct {
 		Password string `json:"password,omitempty"`
 	}
@@ -380,7 +382,7 @@ func (s *Server) handleTestCamera(w http.ResponseWriter, r *http.Request) {
 
 // Get camera capabilities
 func (s *Server) handleGetCameraCapabilities(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := mux.Vars(r)["id"]
 	caps, err := s.camService.GetCapabilities(r.Context(), id)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "PROBE_FAILED", err.Error())
@@ -391,7 +393,7 @@ func (s *Server) handleGetCameraCapabilities(w http.ResponseWriter, r *http.Requ
 
 // Get camera diagnostics
 func (s *Server) handleGetCameraDiagnostics(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := mux.Vars(r)["id"]
 	report, err := s.camService.RunDiagnostics(r.Context(), id)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "DIAGNOSTICS_FAILED", err.Error())
@@ -402,7 +404,7 @@ func (s *Server) handleGetCameraDiagnostics(w http.ResponseWriter, r *http.Reque
 
 // Get camera snapshot
 func (s *Server) handleGetCameraSnapshot(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := mux.Vars(r)["id"]
 	data, ctype, err := s.camService.GetSnapshot(r.Context(), id)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "SNAPSHOT_FAILED", "Failed to get snapshot: "+err.Error())
@@ -416,7 +418,7 @@ func (s *Server) handleGetCameraSnapshot(w http.ResponseWriter, r *http.Request)
 
 // Live stream (MJPEG)
 func (s *Server) handleLiveStream(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := mux.Vars(r)["id"]
 	profile := r.URL.Query().Get("profile")
 	if profile == "" {
 		profile = "sub"
@@ -463,7 +465,7 @@ func (s *Server) handleListDiscoveryJobs(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *Server) handleGetDiscoveryJob(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := mux.Vars(r)["id"]
 	job, err := s.discServ.GetJob(r.Context(), id)
 	if errors.Is(err, discovery.ErrJobNotFound) {
 		writeError(w, http.StatusNotFound, "JOB_NOT_FOUND", "Discovery job not found")
@@ -481,7 +483,7 @@ func (s *Server) handleGetDiscoveryJob(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleCancelDiscoveryJob(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := mux.Vars(r)["id"]
 	if err := s.discServ.CancelJob(r.Context(), id); err != nil {
 		writeError(w, http.StatusInternalServerError, "CANCEL_FAILED", err.Error())
 		return
@@ -490,8 +492,8 @@ func (s *Server) handleCancelDiscoveryJob(w http.ResponseWriter, r *http.Request
 }
 
 func (s *Server) handleProbeDevice(w http.ResponseWriter, r *http.Request) {
-	jobID := r.PathValue("id")
-	deviceID := r.PathValue("deviceId")
+	jobID := mux.Vars(r)["id"]
+deviceID := mux.Vars(r)["deviceId"]
 
 	var req struct {
 		Username string `json:"username"`
@@ -509,8 +511,8 @@ func (s *Server) handleProbeDevice(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleAddDiscoveredDevice(w http.ResponseWriter, r *http.Request) {
-	jobID := r.PathValue("id")
-	deviceID := r.PathValue("deviceId")
+	jobID := mux.Vars(r)["id"]
+	deviceID := mux.Vars(r)["deviceId"]
 
 	var req struct {
 		Name     string `json:"name"`
@@ -558,7 +560,7 @@ func (s *Server) handleCreateLayout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleGetLayout(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := mux.Vars(r)["id"]
 	layout, err := s.camRepo.GetLayout(r.Context(), id)
 	if errors.Is(err, camera.ErrLayoutNotFound) {
 		writeError(w, http.StatusNotFound, "LAYOUT_NOT_FOUND", "Layout not found")
@@ -575,7 +577,7 @@ func (s *Server) handleGetLayout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleUpdateLayout(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := mux.Vars(r)["id"]
 	var l camera.Layout
 	if err := json.NewDecoder(r.Body).Decode(&l); err != nil {
 		writeError(w, http.StatusBadRequest, "INVALID_JSON", "Invalid layout JSON: "+err.Error())
@@ -597,7 +599,7 @@ func (s *Server) handleUpdateLayout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDeleteLayout(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := mux.Vars(r)["id"]
 	if err := s.camRepo.DeleteLayout(r.Context(), id); err != nil {
 		if errors.Is(err, camera.ErrLayoutNotFound) {
 			writeError(w, http.StatusNotFound, "LAYOUT_NOT_FOUND", "Layout not found")
@@ -686,7 +688,7 @@ func (s *Server) handleTestAllCameras(w http.ResponseWriter, r *http.Request) {
 
 // PTZ Move handler
 func (s *Server) handlePTZMove(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := mux.Vars(r)["id"]
 	var req struct {
 		Pan  float64 `json:"pan"`
 		Tilt float64 `json:"tilt"`
@@ -707,7 +709,7 @@ func (s *Server) handlePTZMove(w http.ResponseWriter, r *http.Request) {
 
 // PTZ Stop handler
 func (s *Server) handlePTZStop(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := mux.Vars(r)["id"]
 	if err := s.camService.PTZStop(r.Context(), id); err != nil {
 		writeError(w, http.StatusBadRequest, "PTZ_FAILED", err.Error())
 		return
@@ -721,7 +723,7 @@ func (s *Server) handlePTZStop(w http.ResponseWriter, r *http.Request) {
 
 // PTZ Get Presets handler
 func (s *Server) handlePTZGetPresets(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := mux.Vars(r)["id"]
 	presets, err := s.camService.PTZGetPresets(r.Context(), id)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "PTZ_FAILED", err.Error())
@@ -736,8 +738,8 @@ func (s *Server) handlePTZGetPresets(w http.ResponseWriter, r *http.Request) {
 
 // PTZ Goto Preset handler
 func (s *Server) handlePTZGotoPreset(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	presetId := r.PathValue("presetId")
+	id := mux.Vars(r)["id"]
+	presetId := mux.Vars(r)["presetId"]
 
 	if err := s.camService.PTZGotoPreset(r.Context(), id, presetId); err != nil {
 		writeError(w, http.StatusBadRequest, "PTZ_FAILED", err.Error())
@@ -752,7 +754,7 @@ func (s *Server) handlePTZGotoPreset(w http.ResponseWriter, r *http.Request) {
 
 // Delete group
 func (s *Server) handleDeleteGroup(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := mux.Vars(r)["id"]
 	if err := s.camRepo.DeleteGroup(r.Context(), id); err != nil {
 		writeError(w, http.StatusInternalServerError, "DB_ERROR", err.Error())
 		return
