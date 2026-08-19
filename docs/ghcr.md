@@ -6,10 +6,11 @@ Este documento fornece instruções para configurar o repositório remoto no Git
 
 ## 1. Repositório Oficial
 
+- **Repositório primário (Gitea):** `http://192.168.0.10:3010/facrf/videocmsgemini`
 - **GitHub Repository:** [`https://github.com/facrf/videocmsgemini`](https://github.com/facrf/videocmsgemini)
 - **Container Registry:** `ghcr.io/facrf/videocmsgemini`
 - **Tags Disponíveis:**
-  - `ghcr.io/facrf/videocmsgemini:0.1.0` (Release SemVer fixa)
+  - `ghcr.io/facrf/videocmsgemini:0.1.1` (Release SemVer fixa)
   - `ghcr.io/facrf/videocmsgemini:latest` (Última release estável)
   - `ghcr.io/facrf/videocmsgemini:main` (Build contínuo da branch principal)
 
@@ -47,17 +48,27 @@ flowchart TD
 
 ---
 
-## 3. Publicando uma Nova Release
+## 3. Publicação pelo Gitea e Push Mirror
 
-Para criar e publicar uma nova versão (ex: `0.1.0`):
+O Gitea interno é a origem primária do projeto. Seu push mirror envia branches e tags ao GitHub, onde o evento de push aciona o GitHub Actions e a publicação no GHCR. Não faça alterações diretamente no GitHub, pois o push mirror pode sobrescrevê-las.
+
+Para publicar alterações contínuas na tag `:main`:
+
+```bash
+git push origin main
+```
+
+Para criar e publicar uma nova release (ex: `0.1.2`):
 
 ```bash
 # 1. Criar a tag anotada do Git
-git tag v0.1.0
+git tag -a v0.1.2 -m "Release v0.1.2"
 
-# 2. Enviar a tag para o GitHub
-git push origin v0.1.0
+# 2. Enviar a tag ao Gitea; o push mirror fará o envio ao GitHub
+git push origin v0.1.2
 ```
+
+O push mirror está configurado para sincronizar a cada novo commit. Se necessário, a sincronização também pode ser acionada em **Configurações → Repositório → Configurações de espelho → Sincronizar agora** no Gitea.
 
 ### Onde Acompanhar:
 1. **GitHub Actions:** Acesse a aba **Actions** em [`https://github.com/facrf/videocmsgemini/actions`](https://github.com/facrf/videocmsgemini/actions) para acompanhar a execução dos testes e do build multi-plataforma.
@@ -84,7 +95,7 @@ No Portainer (ou arquivo `portainer-stack.yml`), basta referenciar a imagem dire
 ```yaml
 services:
   cms:
-    image: ghcr.io/facrf/videocmsgemini:0.1.0
+    image: ghcr.io/facrf/videocmsgemini:0.1.1
     container_name: videocms
     # ... demais configurações ...
 ```
@@ -96,4 +107,4 @@ Se o package for mantido como privado:
    - **Name:** `GitHub Container Registry`
    - **Registry URL:** `ghcr.io`
    - **Authentication:** Ative e informe seu usuário do GitHub e um **Personal Access Token (PAT)** com permissão `read:packages`.
-3. Na Stack do Portainer, aponte para `ghcr.io/facrf/videocmsgemini:0.1.0`.
+3. Na Stack do Portainer, aponte para `ghcr.io/facrf/videocmsgemini:0.1.1`.
