@@ -229,6 +229,31 @@ func (r *Repository) DeleteLayout(ctx context.Context, id string) error {
 	return nil
 }
 
+// SetDefaultLayout sets a layout as default and unsets all other default layouts.
+func (r *Repository) SetDefaultLayout(ctx context.Context, id string) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(ctx, "UPDATE layouts SET is_default = 0")
+	if err != nil {
+		return fmt.Errorf("failed to clear previous default layout: %w", err)
+	}
+
+	res, err := tx.ExecContext(ctx, "UPDATE layouts SET is_default = 1, updated_at = ? WHERE id = ?", time.Now().UTC(), id)
+	if err != nil {
+		return fmt.Errorf("failed to set default layout: %w", err)
+	}
+	rowsAff, err := res.RowsAffected()
+	if err != nil || rowsAff == 0 {
+		return ErrLayoutNotFound
+	}
+
+	return tx.Commit()
+}
+
 // ListGroups returns all groups with count of member cameras.
 func (r *Repository) ListGroups(ctx context.Context) ([]Group, error) {
 	rows, err := r.db.QueryContext(ctx, `

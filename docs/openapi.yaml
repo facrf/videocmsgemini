@@ -44,6 +44,57 @@ paths:
               schema:
                 $ref: '#/components/schemas/SystemStats'
 
+  /dashboard:
+    get:
+      summary: Painel de controle integrado (visão consolidada)
+      description: Retorna dados agregados para o dashboard central, incluindo estatísticas, câmeras, varreduras e layouts salvos.
+      responses:
+        '200':
+          description: Resumo consolidado do dashboard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  stats:
+                    $ref: '#/components/schemas/SystemStats'
+                  cameras:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Camera'
+                  recent_jobs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DiscoveryJob'
+                  layouts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Layout'
+                  tags:
+                    type: array
+                    items:
+                      type: string
+
+  /tags:
+    get:
+      summary: Lista todas as tags cadastradas
+      description: Retorna array ordenado de todas as tags distintas atribuídas a câmeras no sistema.
+      responses:
+        '200':
+          description: Lista de tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
   /network/interfaces:
     get:
       summary: Interfaces de rede locais
@@ -525,6 +576,23 @@ paths:
                 properties:
                   message:
                     type: string
+
+  /layouts/{id}/default:
+    post:
+      summary: Define layout como padrão (fixa tela inicial)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Layout definido como padrão com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Layout'
 
   /groups:
     get:

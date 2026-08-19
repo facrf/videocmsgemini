@@ -396,6 +396,24 @@ func (r *Repository) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// ListDistinctTags returns all distinct tags across all cameras.
+func (r *Repository) ListDistinctTags(ctx context.Context) ([]string, error) {
+	rows, err := r.db.QueryContext(ctx, "SELECT DISTINCT tag FROM camera_tags WHERE tag IS NOT NULL AND tag != '' ORDER BY tag ASC")
+	if err != nil {
+		return make([]string, 0), err
+	}
+	defer rows.Close()
+
+	tags := make([]string, 0)
+	for rows.Next() {
+		var tag string
+		if err := rows.Scan(&tag); err == nil && tag != "" {
+			tags = append(tags, tag)
+		}
+	}
+	return tags, nil
+}
+
 // GetTags returns tags for a camera.
 func (r *Repository) GetTags(ctx context.Context, cameraID string) ([]string, error) {
 	rows, err := r.db.QueryContext(ctx, "SELECT tag FROM camera_tags WHERE camera_id = ? ORDER BY tag", cameraID)

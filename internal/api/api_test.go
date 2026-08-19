@@ -265,4 +265,130 @@ func TestEmptyCollectionsJSONArrays(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("expected stats 200, got %d", resp.StatusCode)
 	}
+
+	// 6. GET /api/tags when empty should return []
+	resp, err = http.Get(ts.URL + "/api/tags")
+	if err != nil {
+		t.Fatalf("GET /api/tags failed: %v", err)
+	}
+	defer resp.Body.Close()
+	rawJSON.Reset()
+	_, _ = rawJSON.ReadFrom(resp.Body)
+	trimmed = bytes.TrimSpace(rawJSON.Bytes())
+	if !bytes.Equal(trimmed, []byte("[]")) {
+		t.Errorf("expected tags JSON to be [], got: %s", string(trimmed))
+	}
+}
+
+func TestDashboardEndpoint(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	resp, err := http.Get(ts.URL + "/api/dashboard")
+	if err != nil {
+		t.Fatalf("GET /api/dashboard failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status 200, got %d", resp.StatusCode)
+	}
+
+	var data map[string]interface{}
+	_ = json.NewDecoder(resp.Body).Decode(&data)
+	if data["status"] != "ok" {
+		t.Errorf("expected status 'ok', got %v", data["status"])
+	}
+	if _, ok := data["stats"]; !ok {
+		t.Errorf("expected stats in dashboard payload")
+	}
+	if _, ok := data["cameras"]; !ok {
+		t.Errorf("expected cameras in dashboard payload")
+	}
+	if _, ok := data["recent_jobs"]; !ok {
+		t.Errorf("expected recent_jobs in dashboard payload")
+	}
+	if _, ok := data["layouts"]; !ok {
+		t.Errorf("expected layouts in dashboard payload")
+	}
+}
+
+func TestTagsEndpoint(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	// Create camera with tags
+	payload := map[string]interface{}{
+		"name": "Entrance Cam",
+		"host": "127.0.0.1",
+		"tags": []string{"portaria", "externa"},
+	}
+	bodyBytes, _ := json.Marshal(payload)
+	cResp, err := http.Post(ts.URL+"/api/cameras", "application/json", bytes.NewReader(bodyBytes))
+	if err != nil {
+		t.Fatalf("POST /api/cameras failed: %v", err)
+	}
+	cResp.Body.Close()
+
+	resp, err := http.Get(ts.URL + "/api/tags")
+	if err != nil {
+		t.Fatalf("GET /api/tags failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status 200, got %d", resp.StatusCode)
+	}
+
+	var tags []string
+	_ = json.NewDecoder(resp.Body).Decode(&tags)
+	if len(tags) != 2 {
+		t.Errorf("expected 2 tags, got %d (%v)", len(tags), tags)
+	}
+}
+
+func TestSetDefaultLayoutEndpoint(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	// 1. Create 2 layouts
+	p1 := map[string]interface{}{"name": "Layout 1", "grid_size": 4}
+	b1, _ := json.Marshal(p1)
+	r1, _ := http.Post(ts.URL+"/api/layouts", "application/json", bytes.NewReader(b1))
+	var l1 camera.Layout
+	_ = json.NewDecoder(r1.Body).Decode(&l1)
+	r1.Body.Close()
+
+	p2 := map[string]interface{}{"name": "Layout 2", "grid_size": 9}
+	b2, _ := json.Marshal(p2)
+	r2, _ := http.Post(ts.URL+"/api/layouts", "application/json", bytes.NewReader(b2))
+	var l2 camera.Layout
+	_ = json.NewDecoder(r2.Body).Decode(&l2)
+	r2.Body.Close()
+
+	// 2. Set l2 as default
+	defResp, err := http.Post(ts.URL+"/api/layouts/"+l2.ID+"/default", "application/json", nil)
+	if err != nil {
+		t.Fatalf("POST /api/layouts/%s/default failed: %v", l2.ID, err)
+	}
+	defer defResp.Body.Close()
+
+	if defResp.StatusCode != http.StatusOK {
+		t.Errorf("expected 200, got %d", defResp.StatusCode)
+	}
+
+	var updatedL2 camera.Layout
+	_ = json.NewDecoder(defResp.Body).Decode(&updatedL2)
+	if !updatedL2.IsDefault {
+		t.Errorf("expected l2 is_default = true")
+	}
+
+	// 3. Verify l1 is not default
+	gResp, _ := http.Get(ts.URL + "/api/layouts/" + l1.ID)
+	var checkL1 camera.Layout
+	_ = json.NewDecoder(gResp.Body).Decode(&checkL1)
+	gResp.Body.Close()
+	if checkL1.IsDefault {
+		t.Errorf("expected l1 is_default = false")
+	}
 }

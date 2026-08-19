@@ -10,37 +10,56 @@ import {
   Play,
   Pause,
   Sparkles,
+  Star,
 } from 'lucide-react';
 import { Camera, Layout } from '../types';
 import { CameraTile } from '../components/CameraTile';
 import { SaveLayoutModal } from '../components/SaveLayoutModal';
+import { useAppStore } from '../store';
 
 interface LiveViewProps {
-  cameras: Camera[];
-  layouts: Layout[];
+  cameras?: Camera[];
+  layouts?: Layout[];
   onOpenSnapshot: (cam: Camera) => void;
   onOpenDiagnostics: (cam: Camera) => void;
-  onRefreshLayouts: () => void;
+  onRefreshLayouts?: () => void;
 }
 
 export const LiveView: React.FC<LiveViewProps> = ({
-  cameras = [],
-  layouts = [],
+  cameras: propsCameras,
+  layouts: propsLayouts,
   onOpenSnapshot,
   onOpenDiagnostics,
   onRefreshLayouts,
 }) => {
-  const safeCameras = cameras || [];
-  const safeLayouts = layouts || [];
-  const [gridSize, setGridSize] = useState<number>(4);
-  const [assignedCameras, setAssignedCameras] = useState<Record<number, Camera>>({});
+  const {
+    cameras: storeCameras,
+    layouts: storeLayouts,
+    liveGridSize,
+    liveAssignedCameras,
+    pinnedSlots,
+    activeLayoutId,
+    setLiveGridSize,
+    assignCameraToSlot,
+    removeSlot,
+    setLiveAssignedCameras,
+    togglePinSlot,
+    applyLayout,
+    fixCurrentAsDefaultLayout,
+    showToast,
+    loadData,
+  } = useAppStore();
+
+  const safeCameras = propsCameras || storeCameras || [];
+  const safeLayouts = propsLayouts || storeLayouts || [];
+
   const [maximizedSlot, setMaximizedSlot] = useState<number | null>(null);
-  const [selectedLayoutId, setSelectedLayoutId] = useState<string>('');
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
   const [drawerSearch, setDrawerSearch] = useState('');
   const [selectedSlotForAssignment, setSelectedSlotForAssignment] = useState<number | null>(null);
   const [refreshCounter, setRefreshCounter] = useState(0);
+  const [isFixingDefault, setIsFixingDefault] = useState(false);
 
   // Auto-Cycle / Carousel state
   const [isPatrolling, setIsPatrolling] = useState(false);
@@ -49,58 +68,43 @@ export const LiveView: React.FC<LiveViewProps> = ({
 
   const gridSizes = [1, 4, 6, 9, 12, 16, 25, 32];
 
-  // Auto-populate default layout or first N cameras on load
+  // Auto-populate default layout or first N cameras on load if empty
   useEffect(() => {
-    if (Object.keys(assignedCameras).length === 0 && safeCameras.length > 0) {
+    if (Object.keys(liveAssignedCameras).length === 0 && safeCameras.length > 0) {
       const defLayout = safeLayouts.find((l) => l && l.is_default);
       if (defLayout) {
         applyLayout(defLayout);
       } else {
         const initial: Record<number, Camera> = {};
-        safeCameras.slice(0, gridSize).forEach((c, idx) => {
+        safeCameras.slice(0, liveGridSize).forEach((c, idx) => {
           if (c) initial[idx] = c;
         });
-        setAssignedCameras(initial);
+        setLiveAssignedCameras(initial);
       }
     }
-  }, [cameras, layouts]);
+  }, [safeCameras, safeLayouts]);
 
-  // Patrol / Auto-Cycle timer
+  // Patrol / Auto-Cycle timer (respects pinned slots)
   useEffect(() => {
-    if (!isPatrolling || safeCameras.length <= gridSize) return;
+    if (!isPatrolling || safeCameras.length <= liveGridSize) return;
 
     const timer = setInterval(() => {
-      patrolIndexRef.current = (patrolIndexRef.current + gridSize) % safeCameras.length;
-      const nextBatch: Record<number, Camera> = {};
-      for (let i = 0; i < gridSize; i++) {
+      patrolIndexRef.current = (patrolIndexRef.current + liveGridSize) % safeCameras.length;
+      const nextBatch: Record<number, Camera> = { ...liveAssignedCameras };
+      for (let i = 0; i < liveGridSize; i++) {
+        // Pinned slots remain fixed and do not rotate
+        if (pinnedSlots[i]) continue;
+
         const camIndex = (patrolIndexRef.current + i) % safeCameras.length;
         if (safeCameras[camIndex]) {
           nextBatch[i] = safeCameras[camIndex];
         }
       }
-      setAssignedCameras(nextBatch);
+      setLiveAssignedCameras(nextBatch);
     }, patrolIntervalSec * 1000);
 
     return () => clearInterval(timer);
-  }, [isPatrolling, safeCameras, gridSize, patrolIntervalSec]);
-
-  const applyLayout = (layout: Layout) => {
-    if (!layout) return;
-    setSelectedLayoutId(layout.id || '');
-    setGridSize(layout.grid_size || 4);
-    setMaximizedSlot(null);
-
-    const newMap: Record<number, Camera> = {};
-    const items = layout.items || [];
-    items.forEach((item) => {
-      if (!item) return;
-      const cam = safeCameras.find((c) => c && c.id === item.camera_id);
-      if (cam) {
-        newMap[item.position] = cam;
-      }
-    });
-    setAssignedCameras(newMap);
-  };
+  }, [isPatrolling, safeCameras, liveGridSize, pinnedSlots, liveAssignedCameras, patrolIntervalSec]);
 
   const handleSelectLayout = (layoutId: string) => {
     if (!layoutId) return;
@@ -109,35 +113,38 @@ export const LiveView: React.FC<LiveViewProps> = ({
   };
 
   const handleGridSizeChange = (size: number) => {
-    setGridSize(size);
+    setLiveGridSize(size);
     setMaximizedSlot(null);
-    setSelectedLayoutId('');
   };
 
   const handleAssignCameraToSlot = (slot: number, camera: Camera) => {
-    setAssignedCameras((prev) => ({
-      ...prev,
-      [slot]: camera,
-    }));
+    assignCameraToSlot(slot, camera);
     setShowDrawer(false);
     setSelectedSlotForAssignment(null);
   };
 
   const handleRemoveSlot = (slot: number) => {
-    setAssignedCameras((prev) => {
-      const next = { ...prev };
-      delete next[slot];
-      return next;
-    });
+    removeSlot(slot);
   };
 
   const handleAutoFillOnline = () => {
     const online = safeCameras.filter((c) => c && c.status === 'online');
     const newMap: Record<number, Camera> = {};
-    online.slice(0, gridSize).forEach((c, idx) => {
+    online.slice(0, liveGridSize).forEach((c, idx) => {
       if (c) newMap[idx] = c;
     });
-    setAssignedCameras(newMap);
+    setLiveAssignedCameras(newMap);
+    showToast(`${Object.keys(newMap).length} câmeras online posicionadas na grade.`, 'info');
+  };
+
+  const handleFixScreenAsDefault = async () => {
+    setIsFixingDefault(true);
+    try {
+      await fixCurrentAsDefaultLayout();
+      if (onRefreshLayouts) onRefreshLayouts();
+    } finally {
+      setIsFixingDefault(false);
+    }
   };
 
   const openAssignDrawer = (slot: number) => {
@@ -160,8 +167,8 @@ export const LiveView: React.FC<LiveViewProps> = ({
 
   // Render grid slots
   const renderSlots = () => {
-    if (maximizedSlot !== null && assignedCameras[maximizedSlot]) {
-      const cam = assignedCameras[maximizedSlot];
+    if (maximizedSlot !== null && liveAssignedCameras[maximizedSlot]) {
+      const cam = liveAssignedCameras[maximizedSlot];
       return (
         <div className="h-full w-full">
           <CameraTile
@@ -169,6 +176,8 @@ export const LiveView: React.FC<LiveViewProps> = ({
             camera={cam}
             position={maximizedSlot}
             isMaximized={true}
+            isPinned={Boolean(pinnedSlots[maximizedSlot])}
+            onTogglePin={() => togglePinSlot(maximizedSlot)}
             onToggleMaximize={() => setMaximizedSlot(null)}
             onSnapshot={onOpenSnapshot}
             onOpenDiagnostics={onOpenDiagnostics}
@@ -178,14 +187,16 @@ export const LiveView: React.FC<LiveViewProps> = ({
     }
 
     const slots = [];
-    for (let i = 0; i < gridSize; i++) {
-      const cam = assignedCameras[i];
+    for (let i = 0; i < liveGridSize; i++) {
+      const cam = liveAssignedCameras[i];
       slots.push(
         <CameraTile
           key={`slot-${i}-${cam ? cam.id : 'empty'}-${refreshCounter}`}
           camera={cam}
           position={i}
           isMaximized={false}
+          isPinned={Boolean(pinnedSlots[i])}
+          onTogglePin={() => togglePinSlot(i)}
           onToggleMaximize={() => setMaximizedSlot(i)}
           onRemoveSlot={() => handleRemoveSlot(i)}
           onAssignCamera={() => openAssignDrawer(i)}
@@ -195,7 +206,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
       );
     }
 
-    return <div className={`grid-layout-${gridSize} w-full h-full`}>{slots}</div>;
+    return <div className={`grid-layout-${liveGridSize} w-full h-full`}>{slots}</div>;
   };
 
   return (
@@ -213,7 +224,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 key={size}
                 onClick={() => handleGridSizeChange(size)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
-                  gridSize === size && maximizedSlot === null
+                  liveGridSize === size && maximizedSlot === null
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-slate-400 hover:text-slate-100 hover:bg-slate-700/50'
                 }`}
@@ -224,14 +235,14 @@ export const LiveView: React.FC<LiveViewProps> = ({
           </div>
         </div>
 
-        {/* Center: Layouts Dropdown & Auto-fill */}
-        <div className="flex items-center space-x-2">
+        {/* Center: Layouts Dropdown, Fix Screen as Default & Auto-fill */}
+        <div className="flex items-center space-x-2 flex-wrap sm:flex-nowrap gap-y-2">
           <div className="flex items-center space-x-2 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/40">
             <LayoutGrid className="w-4 h-4 text-slate-400" />
             <select
-              value={selectedLayoutId}
+              value={activeLayoutId}
               onChange={(e) => handleSelectLayout(e.target.value)}
-              className="bg-transparent text-sm text-slate-200 focus:outline-none cursor-pointer font-medium"
+              className="bg-transparent text-sm text-slate-200 focus:outline-none cursor-pointer font-medium max-w-[140px] sm:max-w-none truncate"
             >
               <option value="" className="bg-slate-900 text-slate-400">Layouts Salvos...</option>
               {safeLayouts.map((l) => (
@@ -243,12 +254,22 @@ export const LiveView: React.FC<LiveViewProps> = ({
           </div>
 
           <button
+            onClick={handleFixScreenAsDefault}
+            disabled={isFixingDefault || Object.keys(liveAssignedCameras).length === 0}
+            title="Fixar tela atual como layout padrão (permanente)"
+            className="px-3 py-2 text-sm font-medium bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 rounded-lg border border-amber-500/30 flex items-center gap-1.5 transition disabled:opacity-50 shadow-sm"
+          >
+            <Star className={`w-4 h-4 text-amber-400 ${isFixingDefault ? 'animate-spin-custom' : 'fill-amber-400'}`} />
+            <span className="hidden md:inline">Fixar Tela</span>
+          </button>
+
+          <button
             onClick={() => setShowSaveModal(true)}
-            title="Salvar layout atual com posições"
+            title="Salvar layout atual com nome personalizado"
             className="px-3 py-2 text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700/40 flex items-center gap-1.5 transition"
           >
             <Save className="w-4 h-4 text-blue-400" />
-            <span className="hidden md:inline">Salvar Layout</span>
+            <span className="hidden md:inline">Salvar Como...</span>
           </button>
 
           <button
@@ -289,7 +310,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
             }`}
           >
             <CameraIcon className="w-4 h-4 text-blue-500" />
-            <span>Câmeras ({cameras.length})</span>
+            <span>Câmeras ({safeCameras.length})</span>
           </button>
 
           <button
@@ -357,15 +378,15 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 </div>
               ) : (
                 filteredDrawerCameras.map((cam) => {
-                  const isAssigned = Object.values(assignedCameras).some((c) => c.id === cam.id);
+                  const isAssigned = Object.values(liveAssignedCameras).some((c) => c.id === cam.id);
                   return (
                     <div
                       key={cam.id}
                       onClick={() => {
                         let targetSlot = selectedSlotForAssignment;
                         if (targetSlot === null) {
-                          for (let i = 0; i < gridSize; i++) {
-                            if (!assignedCameras[i]) {
+                          for (let i = 0; i < liveGridSize; i++) {
+                            if (!liveAssignedCameras[i]) {
                               targetSlot = i;
                               break;
                             }
@@ -416,10 +437,13 @@ export const LiveView: React.FC<LiveViewProps> = ({
       {/* Save Layout Modal */}
       {showSaveModal && (
         <SaveLayoutModal
-          gridSize={gridSize}
-          assignedCameras={assignedCameras}
+          gridSize={liveGridSize}
+          assignedCameras={liveAssignedCameras}
           onClose={() => setShowSaveModal(false)}
-          onSaved={() => onRefreshLayouts()}
+          onSaved={() => {
+            if (onRefreshLayouts) onRefreshLayouts();
+            loadData();
+          }}
         />
       )}
     </div>

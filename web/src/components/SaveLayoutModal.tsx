@@ -41,12 +41,15 @@ export const SaveLayoutModal: React.FC<SaveLayoutModalProps> = ({
     });
 
     try {
-      await api.createLayout({
+      const res = await api.createLayout({
         name,
         grid_size: gridSize,
         is_default: isDefault,
         items,
       });
+      if (isDefault && res?.id) {
+        await api.setDefaultLayout(res.id);
+      }
       onSaved();
       onClose();
     } catch (err: any) {

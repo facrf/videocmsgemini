@@ -1,37 +1,63 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   LayoutGrid,
   Trash2,
   Play,
   Star,
+  CheckCircle2,
 } from 'lucide-react';
 import { Layout } from '../types';
 import { api } from '../api/client';
 import { NavTab } from '../components/Sidebar';
+import { useAppStore } from '../store';
 
 interface LayoutsViewProps {
-  layouts: Layout[];
-  onRefresh: () => void;
+  layouts?: Layout[];
+  onRefresh?: () => void;
   onNavigate: (tab: NavTab) => void;
-  showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
+  showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
 export const LayoutsView: React.FC<LayoutsViewProps> = ({
-  layouts = [],
+  layouts: propsLayouts,
   onRefresh,
   onNavigate,
-  showToast,
+  showToast: propsShowToast,
 }) => {
-  const safeLayouts = layouts || [];
+  const { layouts: storeLayouts, applyLayout, showToast: storeShowToast, loadData } = useAppStore();
+  const safeLayouts = propsLayouts || storeLayouts || [];
+  const showToast = propsShowToast || storeShowToast;
+  const [settingDefaultId, setSettingDefaultId] = useState<string | null>(null);
+
   const handleDelete = async (l: Layout) => {
     if (!window.confirm(`Deseja realmente excluir o layout "${l.name}"?`)) return;
     try {
       await api.deleteLayout(l.id);
       showToast(`Layout "${l.name}" removido com sucesso.`, 'success');
-      onRefresh();
+      if (onRefresh) onRefresh();
+      loadData();
     } catch (err: any) {
       showToast(`Erro ao remover layout: ${err.message}`, 'error');
     }
+  };
+
+  const handleSetDefault = async (l: Layout) => {
+    setSettingDefaultId(l.id);
+    try {
+      await api.setDefaultLayout(l.id);
+      showToast(`Layout "${l.name}" fixado como padrão do sistema!`, 'success');
+      if (onRefresh) onRefresh();
+      loadData();
+    } catch (err: any) {
+      showToast(`Erro ao definir layout padrão: ${err.message}`, 'error');
+    } finally {
+      setSettingDefaultId(null);
+    }
+  };
+
+  const handleOpenLive = (l: Layout) => {
+    applyLayout(l);
+    onNavigate('live');
   };
 
   return (
@@ -51,7 +77,7 @@ export const LayoutsView: React.FC<LayoutsViewProps> = ({
             </span>
           </div>
           <p className="text-sm text-slate-400">
-            Gerencie e alterne rapidamente entre grades e arranjos pré-configurados de câmeras
+            Gerencie, fixe como padrão e alterne rapidamente entre grades e arranjos pré-configurados de câmeras
           </p>
         </div>
 
@@ -72,7 +98,7 @@ export const LayoutsView: React.FC<LayoutsViewProps> = ({
           </div>
           <p className="text-base font-medium text-slate-200">Nenhum layout salvo ainda</p>
           <p className="text-sm text-slate-400 mt-2 max-w-sm mx-auto">
-            Abra a tela Live View, organize suas posições de câmeras na grade desejada e clique em "Salvar Layout".
+            Abra a tela Live View, organize suas posições de câmeras na grade desejada e clique em "Salvar Como..." ou "Fixar Tela".
           </p>
           <button
             onClick={() => onNavigate('live')}
@@ -88,18 +114,32 @@ export const LayoutsView: React.FC<LayoutsViewProps> = ({
             return (
               <div
                 key={l.id}
-                className="bg-slate-800/50 border border-slate-700/40 rounded-xl p-6 shadow-sm flex flex-col justify-between space-y-5"
+                className={`bg-slate-800/50 border rounded-xl p-6 shadow-sm flex flex-col justify-between space-y-5 transition-all ${
+                  l.is_default ? 'border-amber-500/50 ring-1 ring-amber-500/30 bg-slate-800/80' : 'border-slate-700/40 hover:border-slate-600/60'
+                }`}
               >
                 <div className="space-y-4">
                   <div className="flex items-start justify-between">
                     <div className="space-y-1.5">
-                      <h3 className="text-base font-semibold text-slate-100">
+                      <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
                         {l.name}
+                        {l.is_default && (
+                          <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                        )}
                       </h3>
-                      {l.is_default && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[11px] font-medium shadow-sm">
-                          <Star className="w-3 h-3 fill-amber-500" /> Layout Padrão
+                      {l.is_default ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[11px] font-medium shadow-sm">
+                          <CheckCircle2 className="w-3 h-3 text-amber-400" /> Layout Padrão (Tela Fixa)
                         </span>
+                      ) : (
+                        <button
+                          onClick={() => handleSetDefault(l)}
+                          disabled={settingDefaultId === l.id}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-800 hover:bg-amber-500/10 text-slate-400 hover:text-amber-400 border border-slate-700/40 hover:border-amber-500/30 text-[11px] font-medium transition disabled:opacity-50"
+                          title="Definir este layout como tela padrão inicial"
+                        >
+                          <Star className="w-3 h-3" /> Fixar como Padrão
+                        </button>
                       )}
                     </div>
                     <span className="px-3 py-1 rounded-full bg-slate-900 text-slate-300 border border-slate-700/40 text-xs font-medium shadow-sm">
@@ -134,10 +174,10 @@ export const LayoutsView: React.FC<LayoutsViewProps> = ({
                 {/* Actions */}
                 <div className="flex items-center justify-between pt-4 border-t border-slate-700/40">
                   <button
-                    onClick={() => onNavigate('live')}
-                    className="px-4 py-2 text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700/40 flex items-center gap-2 transition-colors shadow-sm"
+                    onClick={() => handleOpenLive(l)}
+                    className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-lg border border-blue-500/40 flex items-center gap-2 transition-colors shadow-sm"
                   >
-                    <Play className="w-4 h-4 text-slate-400" /> Abrir no Live View
+                    <Play className="w-4 h-4" /> Aplicar no Live View
                   </button>
                   <button
                     onClick={() => handleDelete(l)}

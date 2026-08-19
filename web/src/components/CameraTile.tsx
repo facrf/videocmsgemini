@@ -11,6 +11,8 @@ import {
   Activity,
   Compass,
   Download,
+  Pin,
+  PinOff,
 } from 'lucide-react';
 import { Camera } from '../types';
 import { api } from '../api/client';
@@ -20,7 +22,9 @@ interface CameraTileProps {
   camera?: Camera;
   position: number;
   isMaximized?: boolean;
+  isPinned?: boolean;
   onToggleMaximize?: () => void;
+  onTogglePin?: () => void;
   onRemoveSlot?: () => void;
   onAssignCamera?: () => void;
   onSnapshot?: (camera: Camera) => void;
@@ -31,7 +35,9 @@ export const CameraTile: React.FC<CameraTileProps> = ({
   camera,
   position,
   isMaximized = false,
+  isPinned = false,
   onToggleMaximize,
+  onTogglePin,
   onRemoveSlot,
   onAssignCamera,
   onSnapshot,
@@ -114,6 +120,14 @@ export const CameraTile: React.FC<CameraTileProps> = ({
 
         {/* Badges */}
         <div className="flex items-center space-x-1.5 pointer-events-auto flex-shrink-0">
+          {isPinned && (
+            <span
+              className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1"
+              title="Câmera fixada no slot"
+            >
+              <Pin className="w-2.5 h-2.5 fill-cyan-400" /> FIXA
+            </span>
+          )}
           {isH265 && (
             <span
               className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700/40"
@@ -246,6 +260,19 @@ export const CameraTile: React.FC<CameraTileProps> = ({
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
+          {onTogglePin && !isMaximized && (
+            <button
+              onClick={onTogglePin}
+              title={isPinned ? 'Desafixar Câmera (Permitir Rotação na Patrulha)' : 'Fixar Câmera no Slot (Travar na Tela)'}
+              className={`p-2 rounded-lg border text-xs transition ${
+                isPinned
+                  ? 'bg-cyan-600/30 text-cyan-300 border-cyan-500/50 hover:bg-cyan-600/40'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-cyan-300 border-slate-700/40'
+              }`}
+            >
+              {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+            </button>
+          )}
         </div>
 
         <div className="flex items-center space-x-1.5">

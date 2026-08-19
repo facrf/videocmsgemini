@@ -48,6 +48,11 @@ export const api = {
   // Health & Stats
   getHealth: () => request<{ status: string; version: string; service: string }>('/health'),
   getStats: () => request<SystemStats>('/stats'),
+  getDashboard: () => request<any>('/dashboard'),
+  listTags: async (): Promise<string[]> => {
+    const res = await request<string[]>('/tags');
+    return res || [];
+  },
   getInterfaces: async (): Promise<NetworkInterfaceInfo[]> => {
     const res = await request<NetworkInterfaceInfo[]>('/network/interfaces');
     return (res || []).map((i) => ({
@@ -207,6 +212,8 @@ export const api = {
     request<Layout>(`/layouts/${id}`, { method: 'PUT', body: JSON.stringify(layout) }),
   deleteLayout: (id: string) =>
     request<{ message: string }>(`/layouts/${id}`, { method: 'DELETE' }),
+  setDefaultLayout: (id: string) =>
+    request<Layout>(`/layouts/${id}/default`, { method: 'POST' }),
 
   // Groups
   listGroups: async (): Promise<Group[]> => {

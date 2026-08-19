@@ -72,6 +72,8 @@ func (s *Server) Routes() http.Handler {
 	router.HandleFunc("/api", s.handleAPIIndex).Methods("GET")
 	router.HandleFunc("/api/health", s.handleHealth).Methods("GET")
 	router.HandleFunc("/api/stats", s.handleStats).Methods("GET")
+	router.HandleFunc("/api/dashboard", s.handleDashboard).Methods("GET")
+	router.HandleFunc("/api/tags", s.handleListTags).Methods("GET")
 	router.HandleFunc("/api/network/interfaces", s.handleNetworkInterfaces).Methods("GET")
 
 	// SSE Events
@@ -111,6 +113,9 @@ func (s *Server) Routes() http.Handler {
 	router.HandleFunc("/api/layouts/{id}", s.handleGetLayout).Methods("GET")
 	router.HandleFunc("/api/layouts/{id}", s.handleUpdateLayout).Methods("PUT")
 	router.HandleFunc("/api/layouts/{id}", s.handleDeleteLayout).Methods("DELETE")
+	router.HandleFunc("/api/layouts/{id}/default", s.handleSetDefaultLayout).Methods("POST")
+	router.HandleFunc("/api/layouts/{id}/set-default", s.handleSetDefaultLayout).Methods("POST")
+	router.HandleFunc("/api/layouts/{id}/pin", s.handleSetDefaultLayout).Methods("POST")
 
 	// Groups REST
 	router.HandleFunc("/api/groups", s.handleListGroups).Methods("GET")
@@ -146,6 +151,8 @@ func (s *Server) handleAPIIndex(w http.ResponseWriter, r *http.Request) {
 		"endpoints": map[string]string{
 			"health":     "/api/health",
 			"stats":      "/api/stats",
+			"dashboard":  "/api/dashboard",
+			"tags":       "/api/tags",
 			"cameras":    "/api/cameras",
 			"discovery":  "/api/discovery",
 			"layouts":    "/api/layouts",
@@ -219,6 +226,94 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 		"sse_clients":    subscribers,
 		"recent_jobs":    len(jobs),
 	})
+}
+
+// Complete dashboard aggregated summary endpoint
+func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	cameras, err := s.camService.ListCameras(ctx)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "DB_ERROR", err.Error())
+		return
+	}
+
+	var total, online, offline, authReq, errorCount int
+	for _, c := range cameras {
+		total++
+		switch c.Status {
+		case camera.StatusOnline:
+			online++
+		case camera.StatusOffline:
+			offline++
+		case camera.StatusAuthRequired:
+			authReq++
+		default:
+			errorCount++
+		}
+	}
+
+	jobs, _ := s.discServ.ListJobs(ctx)
+	if jobs == nil {
+		jobs = make([]*discovery.DiscoveryJob, 0)
+	}
+
+	layouts, _ := s.camRepo.ListLayouts(ctx)
+	if layouts == nil {
+		layouts = make([]*camera.Layout, 0)
+	}
+
+	tags, _ := s.camService.ListTags(ctx)
+	if tags == nil {
+		tags = make([]string, 0)
+	}
+
+	groups, _ := s.camRepo.ListGroups(ctx)
+	if groups == nil {
+		groups = make([]camera.Group, 0)
+	}
+
+	activeStreams := s.streamMgr.GetActiveStreamCount()
+	subscribers := s.broker.SubscriberCount()
+
+	if cameras == nil {
+		cameras = make([]*camera.Camera, 0)
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"status":     "ok",
+		"service":    "VideoCMS",
+		"version":    s.version.Version,
+		"commit":     s.version.Commit,
+		"build_date": s.version.BuildDate,
+		"stats": map[string]interface{}{
+			"total_cameras":  total,
+			"online":         online,
+			"offline":        offline,
+			"auth_required":  authReq,
+			"error_status":   errorCount,
+			"active_streams": activeStreams,
+			"sse_clients":    subscribers,
+			"recent_jobs":    len(jobs),
+		},
+		"cameras":     cameras,
+		"recent_jobs": jobs,
+		"layouts":     layouts,
+		"groups":      groups,
+		"tags":        tags,
+	})
+}
+
+// List all distinct tags across cameras
+func (s *Server) handleListTags(w http.ResponseWriter, r *http.Request) {
+	tags, err := s.camService.ListTags(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "DB_ERROR", err.Error())
+		return
+	}
+	if tags == nil {
+		tags = make([]string, 0)
+	}
+	writeJSON(w, http.StatusOK, tags)
 }
 
 // List network interfaces
@@ -610,6 +705,28 @@ func (s *Server) handleDeleteLayout(w http.ResponseWriter, r *http.Request) {
 	}
 	s.broker.Publish("layout.deleted", map[string]interface{}{"id": id})
 	writeJSON(w, http.StatusOK, map[string]string{"message": "Layout deleted successfully"})
+}
+
+// Set layout as default / pinned layout
+func (s *Server) handleSetDefaultLayout(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	if err := s.camRepo.SetDefaultLayout(r.Context(), id); err != nil {
+		if errors.Is(err, camera.ErrLayoutNotFound) {
+			writeError(w, http.StatusNotFound, "LAYOUT_NOT_FOUND", "Layout not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "DB_ERROR", err.Error())
+		return
+	}
+
+	layout, err := s.camRepo.GetLayout(r.Context(), id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "DB_ERROR", err.Error())
+		return
+	}
+
+	s.broker.Publish("layout.updated", map[string]interface{}{"id": id, "name": layout.Name, "is_default": true})
+	writeJSON(w, http.StatusOK, layout)
 }
 
 // Groups handlers

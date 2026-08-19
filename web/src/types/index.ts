@@ -169,3 +169,16 @@ export interface BatchTestResponse {
   results: CameraTestResult[];
 }
 
+export interface DashboardData {
+  status: string;
+  version: string;
+  commit?: string;
+  build_date?: string;
+  stats: SystemStats;
+  cameras: Camera[];
+  recent_jobs: DiscoveryJob[];
+  layouts: Layout[];
+  groups?: Group[];
+  tags?: string[];
+}
+

@@ -104,6 +104,11 @@ func (s *Service) ListCamerasFiltered(ctx context.Context, search, status, group
 	return s.repo.ListFiltered(ctx, search, status, group, tag, limit, offset)
 }
 
+// ListTags returns all distinct tags registered in the system.
+func (s *Service) ListTags(ctx context.Context) ([]string, error) {
+	return s.repo.ListDistinctTags(ctx)
+}
+
 // UpdateCamera updates camera settings and publishes an event.
 func (s *Service) UpdateCamera(ctx context.Context, cam *Camera) error {
 	if cam.Host != "" {
